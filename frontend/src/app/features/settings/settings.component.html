@@ -1,0 +1,75 @@
+<div class="settings-page">
+  <div class="settings-header">
+    <h2><span class="material-symbols-outlined">settings</span> Sync Rules Configuration</h2>
+    <p>Define how E-Leave and ITAS records are compared and synchronised</p>
+  </div>
+
+  <div class="settings-grid">
+    <!-- Left card -->
+    <div class="settings-card">
+      <div class="form-section">
+        <div class="section-title">Sync Schedule</div>
+        <div class="section-body">
+          <div class="form-row">
+            <span class="row-label">Sync Interval</span>
+            <select [(ngModel)]="syncInterval">
+              <option value="6">Every 6 hours</option>
+              <option value="12">Every 12 hours</option>
+              <option value="24">Daily at midnight</option>
+              <option value="0">Manual only</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <span class="row-label">Start Time</span>
+            <input type="time" [(ngModel)]="startTime" />
+          </div>
+          <label class="check"><input type="checkbox" [(ngModel)]="autoNotify" /> Auto-notify on error</label>
+          <label class="check"><input type="checkbox" [(ngModel)]="retryOnFail" /> Retry on failure</label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="section-title">Comparison Fields</div>
+        <div class="section-body">
+          <label class="check"><input type="checkbox" [(ngModel)]="matchFields.empId"  /> Employee ID</label>
+          <label class="check"><input type="checkbox" [(ngModel)]="matchFields.date"   /> Leave Date &amp; Duration</label>
+          <label class="check"><input type="checkbox" [(ngModel)]="matchFields.type"   /> Leave Type</label>
+          <label class="check"><input type="checkbox" [(ngModel)]="matchFields.status" /> Approval Status</label>
+          <label class="check"><input type="checkbox" [(ngModel)]="matchFields.remarks"/> Remarks / Comments</label>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-cancel" (click)="cancel()">Cancel</button>
+        <button class="btn-save"   (click)="save()">Save Rules</button>
+      </div>
+    </div>
+
+    <!-- Right column -->
+    <div class="settings-right">
+      <div class="settings-card small">
+        <div class="section-title plain">Notification Settings</div>
+        <div class="section-body">
+          <label class="check"><input type="checkbox" [(ngModel)]="notifications.emailEmployee" /> Email employee on mismatch</label>
+          <label class="check"><input type="checkbox" [(ngModel)]="notifications.emailManager"  /> Email manager — missing ITAS entry</label>
+          <label class="check"><input type="checkbox" [(ngModel)]="notifications.emailHr"       /> Email HR — approval conflict</label>
+          <label class="check"><input type="checkbox" [(ngModel)]="notifications.teams"         /> Teams Notification</label>
+          <label class="check"><input type="checkbox" [(ngModel)]="notifications.bell"          /> Dashboard alert bell</label>
+        </div>
+      </div>
+
+      <div class="settings-card small">
+        <div class="section-title plain">Tolerance Settings</div>
+        <p class="note">Minor differences to pass without flagging</p>
+        <div class="form-row">
+          <span class="row-label">Duration tolerance</span>
+          <select [(ngModel)]="durationTolerance"><option>0 days</option><option>0.5 days</option><option>1 day</option></select>
+        </div>
+        <div class="form-row">
+          <span class="row-label">Status grace period</span>
+          <select [(ngModel)]="statusGrace"><option>None</option><option>2 hours</option><option>24 hours</option></select>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,51 @@
+.calendar-page { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+
+.cal-head { margin-bottom:20px;
+  h2 { font-size:20px; font-weight:800; color:#351c15; display:flex; align-items:center; gap:10px; .material-symbols-outlined { color:#d49a00; } }
+  .cal-sub { font-size:13px; color:#64748b; }
+}
+
+.cal-card { background:#fff; border-radius:12px; padding:24px; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+
+.cal-toolbar { display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:20px;
+  strong { font-size:16px; font-weight:700; min-width:130px; text-align:center; }
+}
+.btn-nav { width:36px; height:36px; border:1.5px solid #e2e8f0; border-radius:8px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; &:hover { background:#f8fafc; } }
+
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:20px; }
+.cal-hdr  { text-align:center; padding:8px 2px; font-size:11px; font-weight:700; color:#64748b; background:#f8fafc; border-radius:4px; }
+.cal-empty { min-height:80px; }
+.cal-day {
+  min-height:80px; padding:6px; border:1px solid #e2e8f0; border-radius:6px; background:#fff; cursor:pointer; transition:background 0.15s;
+  &:hover { background:#f0f9ff; border-color:#bfdbfe; }
+  &.weekend { background:#fffbeb; }
+  &.today { border:2px solid #d49a00; }
+}
+
+.cal-day-top { display:flex; align-items:center; gap:4px; margin-bottom:4px;
+  .day-num { font-weight:700; font-size:13px; }
+  .today-pill { font-size:9px; background:#d49a00; color:#fff; border-radius:10px; padding:1px 6px; font-weight:700; }
+  .leave-count { margin-left:auto; font-size:10px; background:#fee2e2; color:#dc2626; border-radius:10px; padding:1px 6px; font-weight:700; }
+}
+
+.chips { display:flex; flex-direction:column; gap:2px; }
+.chip {
+  display:flex; align-items:center; gap:4px; border-radius:4px; padding:2px 5px; font-size:9px; overflow:hidden;
+  .chip-avatar { width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; font-size:8px; font-weight:700; flex-shrink:0; }
+  .chip-name   { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  &.chip-annual    { background:#dbeafe; color:#1e40af; }
+  &.chip-sick      { background:#fee2e2; color:#991b1b; }
+  &.chip-emergency { background:#fef3c7; color:#92400e; }
+  &.chip-unpaid    { background:#f3f4f6; color:#374151; }
+}
+
+.legend { display:flex; gap:20px; flex-wrap:wrap; padding-top:16px; border-top:1px solid #f1f5f9;
+  span { display:flex; align-items:center; gap:6px; font-size:12px; color:#475569; }
+  .dot { width:12px; height:12px; border-radius:3px;
+    &.annual    { background:#dbeafe; border:1px solid #93c5fd; }
+    &.sick      { background:#fee2e2; border:1px solid #fca5a5; }
+    &.emergency { background:#fef3c7; border:1px solid #fcd34d; }
+    &.unpaid    { background:#f3f4f6; border:1px solid #d1d5db; }
+  }
+}

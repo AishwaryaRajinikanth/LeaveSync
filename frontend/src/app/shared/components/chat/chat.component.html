@@ -1,0 +1,46 @@
+<!-- FAB -->
+<button class="chat-fab" (click)="toggle()" title="Chat with LeaveSync AI">
+  <span class="material-symbols-outlined">{{ open() ? 'close' : 'chat' }}</span>
+</button>
+
+<!-- Box -->
+@if (open()) {
+  <div class="chat-box">
+    <div class="chat-header">
+      <div class="chat-avatar"><span class="material-symbols-outlined">smart_toy</span></div>
+      <div>
+        <div class="chat-title">LeaveSync Assistant</div>
+        <div class="chat-status"><span class="status-dot"></span> Online</div>
+      </div>
+      <button class="close-btn" (click)="toggle()"><span class="material-symbols-outlined">close</span></button>
+    </div>
+
+    <div class="chat-messages" #msgList>
+      @for (msg of messages(); track $index) {
+        <div class="chat-msg" [class.bot]="msg.type==='bot'" [class.user]="msg.type==='user'">
+          @if (msg.type==='bot') { <div class="msg-avatar"><span class="material-symbols-outlined">smart_toy</span></div> }
+          <div class="msg-bubble">
+            @if (msg.typing) {
+              <div class="typing"><span></span><span></span><span></span></div>
+            } @else {
+              <p style="white-space:pre-line">{{ msg.text }}</p>
+            }
+          </div>
+          @if (msg.type==='user') { <div class="msg-avatar user-av"><span class="material-symbols-outlined">person</span></div> }
+        </div>
+      }
+    </div>
+
+    <div class="chat-suggestions">
+      @for (s of suggestions; track s) {
+        <button class="suggestion" (click)="send(s)">{{ s }}</button>
+      }
+    </div>
+
+    <div class="chat-input-area">
+      <input class="chat-input" [value]="input()" (input)="input.set($any($event.target).value)"
+             (keydown.enter)="send()" placeholder="Type a message…" />
+      <button class="send-btn" (click)="send()"><span class="material-symbols-outlined">send</span></button>
+    </div>
+  </div>
+}

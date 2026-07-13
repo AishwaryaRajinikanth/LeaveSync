@@ -1,0 +1,179 @@
+﻿<!-- Upload -->
+<section class="upload-section">
+  <div class="section-head">
+    <h2><span class="material-symbols-outlined">upload</span> Data Upload</h2>
+  </div>
+  <div class="upload-grid">
+    <div class="upload-card">
+      <span class="material-symbols-outlined upload-icon eleave">flight_takeoff</span>
+      <h3>E-Leave Portal Data</h3>
+      <p>Upload leave applications export (.csv / .xlsx)</p>
+      <input type="file" #eleaveInput id="eleaveFile" accept=".csv,.xlsx" (change)="onELeaveFile($event)" hidden />
+      <button class="btn-outline" (click)="eleaveInput.click()">
+        <span class="material-symbols-outlined">attach_file</span> Choose File
+      </button>
+      @if (eleaveFile()) { <span class="file-name">{{ eleaveFile()!.name }}</span> }
+    </div>
+    <div class="upload-card">
+      <span class="material-symbols-outlined upload-icon itas">schedule</span>
+      <h3>ITAS Timesheet Data</h3>
+      <p>Upload timesheet export (.csv / .xlsx)</p>
+      <input type="file" #itasInput id="itasFile" accept=".csv,.xlsx" (change)="onITASFile($event)" hidden />
+      <button class="btn-outline" (click)="itasInput.click()">
+        <span class="material-symbols-outlined">attach_file</span> Choose File
+      </button>
+      @if (itasFile()) { <span class="file-name">{{ itasFile()!.name }}</span> }
+    </div>
+  </div>
+  <div class="demo-notice">
+    <span class="material-symbols-outlined">info</span>
+    <span>Upload both E-Leave and ITAS CSV files then click Run Reconciliation.</span>
+  </div>
+  <div class="upload-actions">
+    <button class="btn-primary btn-run" [disabled]="running() || !canRun" [title]="!canRun ? 'Upload both files to enable' : 'Run reconciliation'" (click)="runReconciliation()">
+      @if (running()) {
+        <span class="spinner-inline"></span> Running...
+      } @else {
+        <span class="material-symbols-outlined">play_arrow</span> Run Reconciliation
+      }
+    </button>
+  </div>
+</section>
+
+<!-- KPI Cards -->
+@if (results()) {
+  <section class="kpi-row">
+    <div class="kpi-card blue">
+      <span class="material-symbols-outlined">calendar_today</span>
+      <div><strong>{{ results()!.summary.total }}</strong><span>Total Records</span></div>
+    </div>
+    <div class="kpi-card green">
+      <span class="material-symbols-outlined">check_circle</span>
+      <div><strong>{{ results()!.summary.matched }}</strong><span>Matched</span></div>
+    </div>
+    <div class="kpi-card amber">
+      <span class="material-symbols-outlined">warning</span>
+      <div><strong>{{ results()!.summary.warnings }}</strong><span>Warnings</span></div>
+    </div>
+    <div class="kpi-card red">
+      <span class="material-symbols-outlined">cancel</span>
+      <div><strong>{{ results()!.summary.critical }}</strong><span>Critical</span></div>
+    </div>
+    <div class="kpi-card teal">
+      <span class="material-symbols-outlined">percent</span>
+      <div><strong>{{ results()!.summary.reconciliationRate }}%</strong><span>Sync Rate</span></div>
+    </div>
+  </section>
+}
+
+<!-- Results -->
+@if (results()) {
+  <section class="results-section">
+    <div class="section-head">
+      <h2><span class="material-symbols-outlined">report_problem</span> Discrepancies Found</h2>
+      <div class="filter-group">
+            <button class="btn-export" (click)="exportCsv()"><span class="material-symbols-outlined">download</span> Export CSV</button>
+            <button class="notify-all-btn" (click)="notifyAll()"><span class="material-symbols-outlined">notifications</span> Notify All</button>
+            <button class="filter-btn" [class.active]="activeFilter()==='all'"      (click)="setFilter('all')">All</button>
+            <button class="filter-btn" [class.active]="activeFilter()==='critical'" (click)="setFilter('critical')">Critical</button>
+            <button class="filter-btn" [class.active]="activeFilter()==='warning'"  (click)="setFilter('warning')">Warning</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            @for (col of [
+              {key:'employee',     label:'Employee'},
+              {key:'department',   label:'Dept'},
+              {key:'date',         label:'Date'},
+              {key:'eleaveStatus', label:'E-Leave'},
+              {key:'itasStatus',   label:'ITAS'},
+              {key:'issue',        label:'Issue'},
+              {key:'priority',     label:'Priority'}
+            ]; track col.key) {
+              <th class="filter-th">
+                <div class="th-inner">
+                  <span>{{ col.label }}</span>
+                  <button class="filter-icon" [class.active]="isFilterActive(col.key)" (click)="toggleFilter(col.key, $event)">
+                    <span class="material-symbols-outlined">filter_list</span>
+                  </button>
+                </div>
+                @if (openFilter() === col.key) {
+                  <div class="filter-dropdown" (click)="$event.stopPropagation()">
+                    <div class="filter-dropdown-head">
+                      <span>Filter {{ col.label }}</span>
+                      @if (isFilterActive(col.key)) {
+                        <button class="clear-link" (click)="clearColumnFilter(col.key, $event)">Clear</button>
+                      }
+                    </div>
+                    <div class="filter-search-wrap">
+                      <span class="material-symbols-outlined">search</span>
+                      <input class="filter-search-input" type="text"
+                        placeholder="Search..."
+                        [value]="getFilterSearch(col.key)"
+                        (input)="setFilterSearch(col.key, $any($event.target).value, $event)"
+                        (click)="$event.stopPropagation()" />
+                    </div>
+                    <div class="filter-options">
+                      @for (val of uniqueValues(col.key); track val) {
+                        <label class="filter-option">
+                          <input type="checkbox" [checked]="isChecked(col.key, val)" (change)="toggleValue(col.key, val)" />
+                          <span>{{ val }}</span>
+                        </label>
+                      }
+                      @if (uniqueValues(col.key).length === 0) {
+                        <div class="filter-no-results">No matches</div>
+                      }
+                    </div>
+                  </div>
+                }
+              </th>
+            }
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of allDiscrepancies; track d.employeeId + d.date + d.rule) {
+            <tr>
+              <td>
+                <div class="emp-cell">
+                  <div class="avatar">{{ initials(d.employeeName) }}</div>
+                  <div>
+                    <div class="emp-name">{{ d.employeeName || ('EMP ' + d.employeeId) }}</div>
+                    <div class="emp-id">{{ d.employeeId }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>{{ d.department || '&mdash;' }}</td>
+              <td>{{ formatDate(d.date) }}</td>
+              <td>
+                <span class="status-pill" [class]="eleaveClass(d.eleaveStatus)">
+                  {{ d.leaveType || '&mdash;' }}
+                </span>
+              </td>
+              <td><span class="status-pill" [class]="itasClass(d.itasStatus)">{{ d.itasStatus || '&mdash;' }}</span></td>
+              <td class="issue-cell">{{ d.issue }}</td>
+              <td>
+                <span class="priority-badge" [class]="'p-' + getPriority(d)">
+                  <span class="material-symbols-outlined">{{ getPriority(d) === 'high' ? 'priority_high' : 'remove' }}</span>
+                  {{ getPriority(d) === 'high' ? 'High' : 'Medium' }}
+                </span>
+              </td>
+              <td>
+                <div class="action-btns">
+                  <button class="btn-notify-sm" [class.notified]="isNotified(d)" [disabled]="isNotified(d)" (click)="notifyIssue(d)">
+                    {{ isNotified(d) ? '✓ Notified' : 'Notify' }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+              <tr><td colspan="8" class="empty-state">No discrepancies found — all records matched!</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}

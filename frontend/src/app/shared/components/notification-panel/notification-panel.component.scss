@@ -1,0 +1,62 @@
+.notif-overlay {
+  position:fixed; inset:0; z-index:199;
+}
+
+.notif-panel {
+  position:fixed; top:56px; right:0; bottom:0; width:320px; z-index:200;
+  background:#fff; border-left:1px solid #e2e8f0;
+  box-shadow:-4px 0 24px rgba(0,0,0,0.12);
+  display:flex; flex-direction:column;
+  animation:slideIn 0.25s ease;
+}
+@keyframes slideIn { from { transform:translateX(100%); } to { transform:none; } }
+
+.notif-header {
+  padding:16px 18px; border-bottom:1px solid #e2e8f0;
+  display:flex; align-items:center; justify-content:space-between;
+  .notif-header-title { display:flex; align-items:center; gap:10px;
+    .notif-icon { width:36px; height:36px; border-radius:50%; background:#fef3c7; display:flex; align-items:center; justify-content:center; .material-symbols-outlined { font-size:20px; color:#d97706; } }
+    h3 { font-size:15px; font-weight:700; }
+    .notif-sub { font-size:12px; color:#64748b; }
+  }
+  .notif-actions { display:flex; gap:6px; }
+}
+
+.btn-mark-read, .btn-close {
+  width:32px; height:32px; border:none; background:transparent; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; border-radius:6px; color:#64748b;
+  .material-symbols-outlined { font-size:18px; }
+  &:hover { background:#f8fafc; color:#1e293b; }
+}
+
+.notif-list {
+  flex:1; overflow-y:auto; padding:12px;
+  display:flex; flex-direction:column; gap:8px;
+}
+
+.notif-item {
+  padding:12px; border-radius:8px; border-left:3px solid #e2e8f0; background:#f8fafc;
+  &.critical { border-color:#dc2626; background:#fff1f2; }
+  &.warning  { border-color:#d97706; background:#fffbeb; }
+  &.info     { border-color:#1a56db; background:#eff6ff; }
+  .notif-item-title { font-size:12px; font-weight:700; line-height:1.4; }
+  .notif-item-sub   { font-size:11px; color:#64748b; margin-top:4px; }
+}
+
+.notif-empty {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:48px 20px; gap:10px; color:#94a3b8;
+  .material-symbols-outlined { font-size:40px; }
+  p { font-size:13px; }
+}
+
+.notif-footer {
+  padding:14px 18px; border-top:1px solid #e2e8f0;
+}
+.view-all-btn {
+  width:100%; padding:10px; border:1.5px solid #e2e8f0; border-radius:8px;
+  background:#fff; font-size:13px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px; color:#475569;
+  .material-symbols-outlined { font-size:16px; }
+  &:hover { background:#f8fafc; }
+}

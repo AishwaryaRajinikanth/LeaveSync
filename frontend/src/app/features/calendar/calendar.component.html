@@ -1,0 +1,49 @@
+<div class="calendar-page">
+  <div class="cal-head">
+    <h2><span class="material-symbols-outlined">calendar_month</span> Leave Calendar</h2>
+    <span class="cal-sub">{{ subtitle }}</span>
+  </div>
+
+  <div class="cal-card">
+    <div class="cal-toolbar">
+      <button class="btn-nav"><span class="material-symbols-outlined">chevron_left</span></button>
+      <strong>{{ title }}</strong>
+      <button class="btn-nav"><span class="material-symbols-outlined">chevron_right</span></button>
+    </div>
+
+    <div class="cal-grid">
+      @for (h of headers; track h) {
+        <div class="cal-hdr">{{ h }}</div>
+      }
+      @for (e of [].constructor(emptyStart); track $index) {
+        <div class="cal-empty"></div>
+      }
+      @for (d of days; track d.day) {
+        <div class="cal-day" [class.weekend]="d.isWeekend" [class.today]="d.isToday" (click)="onDayClick(d.day)">
+          <div class="cal-day-top">
+            <span class="day-num">{{ d.day }}</span>
+            @if (d.isToday) { <span class="today-pill">Today</span> }
+            @if (d.leaves.length) { <span class="leave-count">{{ d.leaves.length }}</span> }
+          </div>
+          @if (d.leaves.length) {
+            <div class="chips">
+              @for (lv of d.leaves; track lv.name) {
+                <div class="chip chip-{{ lv.cat }}" [title]="lv.name + ' — ' + lv.cat + ' leave'">
+                  <span class="chip-avatar">{{ initials(lv.name) }}</span>
+                  <span class="chip-name">{{ lv.name }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="legend">
+      <span><span class="dot annual"></span> Annual Leave</span>
+      <span><span class="dot sick"></span> Sick Leave</span>
+      <span><span class="dot emergency"></span> Emergency/Other</span>
+      <span><span class="dot unpaid"></span> Unpaid Leave</span>
+    </div>
+  </div>
+</div>

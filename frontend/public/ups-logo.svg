@@ -1,0 +1,7 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 132" width="120" height="132">
+  <path d="M60 4 C60 4 96 14 108 14 L108 78 C108 104 78 120 60 128 C42 120 12 104 12 78 L12 14 C24 14 60 4 60 4 Z" fill="#7A4E00"/>
+  <path d="M60 9 C60 9 93 18 104 18 L104 77 C104 100 77 115 60 123 C43 115 16 100 16 77 L16 18 C27 18 60 9 60 9 Z" fill="#FFB406"/>
+  <path d="M16 32 C36 24 84 24 104 32 L104 41 C84 33 36 33 16 41 Z" fill="#7A4E00"/>
+  <path d="M17 33 C37 25.5 83 25.5 103 33 L103 40 C83 32.5 37 32.5 17 40 Z" fill="#FFD565"/>
+  <text x="60" y="90" font-family="Arial Black, Helvetica, sans-serif" font-size="33" font-weight="900" fill="#7A4E00" text-anchor="middle" dominant-baseline="middle">UPS</text>
+</svg>

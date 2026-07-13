@@ -1,0 +1,37 @@
+﻿.app-header {
+  height: 52px;
+  background: #351C15;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; flex-shrink: 0;
+  border-bottom: 2px solid #FFB500;
+
+  .header-left {
+    display: flex; align-items: center; gap: 10px; color: #fff;
+    .material-symbols-outlined { color: #FFB500; font-size: 18px; }
+    .title {
+      font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+      em { font-style: normal; font-weight: 400; font-size: 12px; color: rgba(255,255,255,0.6); margin-left: 8px; }
+    }
+  }
+
+  .header-right { display: flex; align-items: center; gap: 10px;
+    .welcome { font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500; }
+  }
+
+  .notif-bell-wrap { position: relative; }
+  .notif-badge {
+    position: absolute; top: -4px; right: -4px; width: 16px; height: 16px;
+    background: #dc2626; color: #fff; border-radius: 50%; font-size: 9px;
+    font-weight: 700; display: flex; align-items: center; justify-content: center;
+    border: 2px solid #351C15; pointer-events: none;
+  }
+
+  .icon-btn, .btn-logout {
+    width: 32px; height: 32px;
+    border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+    background: transparent; color: rgba(255,255,255,0.75); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+    .material-symbols-outlined { font-size: 17px; }
+    &:hover { background: rgba(255,255,255,0.12); color: #FFB500; border-color: rgba(255,181,0,0.4); }
+  }
+}

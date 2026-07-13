@@ -1,0 +1,53 @@
+<div class="login-page">
+  <div class="sso-banner">
+    <span class="brand-shield">UPS</span>
+    <span class="brand-title">IT Activity System &nbsp;|&nbsp; E-Leave Portal</span>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="ups-shield">UPS</div>
+      <div class="auth-app-name">
+        UPS Leave Reconciliation Portal
+        <span>E-Leave ↔ ITAS · Asia Pacific HR</span>
+      </div>
+    </div>
+
+    @if (!loading()) {
+      <div class="auth-title">Sign In</div>
+      <div class="auth-sub">Use your UPS network credentials or Microsoft SSO to continue</div>
+
+      <div class="form-group">
+        <label>Employee ID</label>
+        <input type="text" [(ngModel)]="employeeId" placeholder="Employee ID" />
+      </div>
+
+      <button class="btn-sso btn-ups" (click)="signIn('ups')">
+        🔑 Sign in with UPS SSO
+      </button>
+
+      <div class="auth-divider"><span>or continue with</span></div>
+
+      <button class="btn-sso btn-ms" (click)="signIn('ms')">
+        <span class="ms-logo"><span></span><span></span><span></span><span></span></span>
+        Sign in with Microsoft
+      </button>
+
+      <div class="sso-footer">
+        <a href="#">Forgot Employee ID?</a> ·
+        <a href="#">IT Help Desk</a> ·
+        <a href="#">Privacy Policy</a>
+      </div>
+    } @else {
+      <div class="sso-redirect">
+        <div class="redirect-spinner"></div>
+        <div class="redirect-msg">Signing in...</div>
+        <div class="redirect-sub">Authenticating · Please wait</div>
+        <div class="redirect-bar-wrap">
+          <div class="redirect-bar" [style.width.%]="progress()"></div>
+        </div>
+        <div class="redirect-step">{{ step() }}</div>
+      </div>
+    }
+  </div>
+</div>

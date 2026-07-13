@@ -1,0 +1,21 @@
+<header class="app-header">
+  <div class="header-left">
+    <span class="material-symbols-outlined">sync_alt</span>
+    <span class="title">eTAS <em>E-Leave ↔ ITAS Reconciliation</em></span>
+  </div>
+  <div class="header-right">
+    <span class="welcome">Welcome {{ auth.session?.name ?? '' }}</span>
+    <div class="notif-bell-wrap">
+      <button class="icon-btn" (click)="notifPanel.toggle()" title="Notifications">
+        <span class="material-symbols-outlined">notifications</span>
+        @if (((notif.notifications$ | async) ?? []).length > 0) {
+          <span class="notif-badge">{{ ((notif.notifications$ | async) ?? []).length }}</span>
+        }
+      </button>
+      <app-notification-panel #notifPanel />
+    </div>
+    <button class="btn-logout" (click)="logout()" title="Logout">
+      <span class="material-symbols-outlined">logout</span>
+    </button>
+  </div>
+</header>

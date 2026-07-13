@@ -1,0 +1,18 @@
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <!-- UPS shield logo -->
+    <img class="ups-shield-svg" src="ups-logo.png" alt="UPS" />
+    <span class="app-name">eTAS</span>
+  </div>
+  <nav class="sidebar-nav">
+    @for (item of nav; track item.path) {
+      <a [routerLink]="item.path" routerLinkActive="active" class="nav-link">
+        <span class="material-symbols-outlined">{{ item.icon }}</span>
+        <span class="label">{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+  <div class="sidebar-footer">
+    <span class="version">v2.5.0</span>
+  </div>
+</aside>

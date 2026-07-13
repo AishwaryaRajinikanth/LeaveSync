@@ -1,0 +1,95 @@
+<div class="reports-page">
+  <div class="reports-header">
+    <h2><span class="material-symbols-outlined">bar_chart</span> Data Sync Report — E-Leave vs ITAS</h2>
+    <p>View reconciliation sync status across time periods</p>
+  </div>
+
+  <!-- Scope tabs -->
+  <div class="scope-bar">
+    <span class="scope-label"><span class="material-symbols-outlined">account_tree</span> View as:</span>
+    <div class="scope-tabs">
+      <button class="scope-tab" [class.active]="scope()==='director'" (click)="setScope('director')"><span class="material-symbols-outlined">corporate_fare</span> Director</button>
+      <button class="scope-tab" [class.active]="scope()==='manager'"  (click)="setScope('manager')"><span class="material-symbols-outlined">manage_accounts</span> Manager</button>
+      <button class="scope-tab" [class.active]="scope()==='self'"     (click)="setScope('self')"><span class="material-symbols-outlined">person</span> Self</button>
+    </div>
+    <span class="scope-info">{{ scopeLabel() }}</span>
+  </div>
+
+  <!-- Period tabs -->
+  <div class="period-tabs">
+    <button class="period-tab" [class.active]="period()==='year'"  (click)="setPeriod('year')"><span class="material-symbols-outlined">calendar_today</span> Year</button>
+    <button class="period-tab" [class.active]="period()==='month'" (click)="setPeriod('month')"><span class="material-symbols-outlined">calendar_month</span> Month</button>
+    <button class="period-tab" [class.active]="period()==='week'"  (click)="setPeriod('week')"><span class="material-symbols-outlined">calendar_view_week</span> Week</button>
+    <button class="period-tab" [class.active]="period()==='date'"  (click)="setPeriod('date')"><span class="material-symbols-outlined">event</span> Date</button>
+  </div>
+
+  <!-- Period selector -->
+  <div class="period-controls">
+    <div class="selectors">
+      <label>Year:</label>
+      <select [ngModel]="selectedYear()" (ngModelChange)="selectedYear.set($event)">
+        <option [value]="2026">2026</option>
+        <option [value]="2025">2025</option>
+      </select>
+
+      @if (period()==='month') {
+        <select [ngModel]="selectedMonth()" (ngModelChange)="selectedMonth.set($event)">
+          @for (m of months; track m.v) { <option [value]="m.v">{{m.l}}</option> }
+        </select>
+      }
+      @if (period()==='week') {
+        <select [ngModel]="selectedWeek()" (ngModelChange)="selectedWeek.set($event)">
+          @for (w of weeks; track w.v) { <option [value]="w.v">{{w.l}}</option> }
+        </select>
+      }
+      @if (period()==='date') {
+        <input type="date" [ngModel]="selectedDate()" (ngModelChange)="selectedDate.set($event)" />
+      }
+    </div>
+    <button class="btn-generate" (click)="generate()">
+      <span class="material-symbols-outlined">search</span> Generate Report
+    </button>
+  </div>
+
+  <!-- Summary -->
+  @if (hasRun()) {
+    <div class="report-summary">
+      <div class="rpt-card total"><span class="material-symbols-outlined">database</span><div><strong>{{summary.total}}</strong><span>Total Entries</span></div></div>
+      <div class="rpt-card synced"><span class="material-symbols-outlined">done_all</span><div><strong>{{summary.synced}}</strong><span>Synced</span></div></div>
+      <div class="rpt-card mismatch"><span class="material-symbols-outlined">shuffle</span><div><strong>{{summary.mismatch}}</strong><span>Mismatched</span></div></div>
+      <div class="rpt-card missing"><span class="material-symbols-outlined">help</span><div><strong>{{summary.missing}}</strong><span>Missing</span></div></div>
+      <div class="rpt-card rate"><span class="material-symbols-outlined">percent</span><div><strong>{{summary.rate}}%</strong><span>Sync Rate</span></div></div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="sync-progress">
+      <div class="progress-labels"><span>Sync Rate</span><span>{{summary.rate}}%</span></div>
+      <div class="progress-track"><div class="progress-fill" [style.width.%]="summary.rate"></div></div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table class="report-table">
+        <thead><tr>
+          <th>Employee</th><th>Dept</th><th>Date</th>
+          <th>E-Leave</th><th>ITAS</th><th>Sync Status</th><th>Detail</th>
+        </tr></thead>
+        <tbody>
+          @for (r of rows(); track r.employeeId + r.date) {
+            <tr>
+              <td><div class="emp-cell"><div class="avatar">{{r.employeeName[0]}}</div><div><div class="emp-name">{{r.employeeName}}</div><div class="emp-id">{{r.employeeId}}</div></div></div></td>
+              <td>{{r.department}}</td>
+              <td>{{r.date}}</td>
+              <td>{{r.eleave || '—'}}</td>
+              <td>{{r.itas || '—'}}</td>
+              <td><span class="status-badge" [class]="'s-' + r.status.toLowerCase().replace(/ /g,'-')">{{r.status}}</span></td>
+              <td class="detail-cell">{{r.detail}}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="7" class="empty">No records for selected scope/period.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

@@ -1,0 +1,39 @@
+<div class="portal-page">
+  <div class="portal-toolbar">
+    <span class="portal-badge"><span class="material-symbols-outlined">{{portal.icon}}</span> {{portal.label}}</span>
+    <span class="portal-url">{{portal.url}}</span>
+    <div class="portal-actions">
+      <button class="btn-outline" (click)="openNew()"><span class="material-symbols-outlined">open_in_new</span> Open in new tab</button>
+      <button class="btn-outline" (click)="tryEmbed()"><span class="material-symbols-outlined">web</span> Try Embedded</button>
+    </div>
+  </div>
+
+  @if (state() === 'launcher') {
+    <div class="launcher">
+      <span class="launcher-icon material-symbols-outlined">{{portal.icon}}</span>
+      <h2>{{portal.label}} Portal</h2>
+      <p class="launcher-url">{{portal.url}}</p>
+      <p class="launcher-desc">For security, UPS internal portals restrict embedding. Open the portal in a new tab, or try loading it inside the app.</p>
+      <div class="launcher-btns">
+        <button class="btn-primary" (click)="openNew()"><span class="material-symbols-outlined">open_in_new</span> Open Portal</button>
+        <button class="btn-outline" (click)="tryEmbed()"><span class="material-symbols-outlined">web</span> Try Embedded View</button>
+      </div>
+    </div>
+  }
+
+  @if (state() === 'loading') {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading portal…</p>
+    </div>
+  }
+
+  @if (state() === 'blocked') {
+    <div class="blocked-state">
+      <span class="material-symbols-outlined blocked-icon">shield</span>
+      <h3>Portal could not be embedded</h3>
+      <p>The portal blocks embedding for security (X-Frame-Options / CSP). Please open it in a new tab.</p>
+      <button class="btn-primary" (click)="openNew()"><span class="material-symbols-outlined">open_in_new</span> Open in New Tab</button>
+    </div>
+  }
+</div>

@@ -1,0 +1,25 @@
+.portal-page { height:100%; display:flex; flex-direction:column; gap:0; }
+.portal-toolbar { display:flex; align-items:center; gap:12px; padding:12px 20px; background:#fff; border-radius:10px 10px 0 0; border-bottom:1px solid #e2e8f0; flex-wrap:wrap; margin-bottom:0;
+  .portal-badge { display:flex; align-items:center; gap:6px; font-weight:700; font-size:13px; padding:5px 12px; background:#ebf3ff; color:#1a56db; border-radius:20px; .material-symbols-outlined { font-size:16px; } }
+  .portal-url   { font-size:12px; color:#64748b; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .portal-actions { display:flex; gap:8px; }
+}
+
+.btn-primary { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; background:linear-gradient(135deg,#351c15,#5a3620); color:#ffb500; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; .material-symbols-outlined { font-size:16px; } }
+.btn-outline  { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border:1.5px solid #e2e8f0; border-radius:8px; background:#fff; font-size:13px; font-weight:600; cursor:pointer; .material-symbols-outlined { font-size:16px; } &:hover { background:#f8fafc; } }
+
+.launcher, .loading-state, .blocked-state {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+  text-align:center; padding:48px; background:#fff; border-radius:0 0 10px 10px;
+}
+.launcher-icon { font-size:56px; color:#1a56db; }
+.launcher-url  { font-size:13px; color:#64748b; }
+.launcher-desc { font-size:14px; color:#475569; max-width:480px; line-height:1.6; }
+.launcher-btns { display:flex; gap:12px; }
+
+.spinner { width:48px; height:48px; border:4px solid #e2e8f0; border-top-color:#351c15; border-radius:50%; animation:spin 0.9s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.blocked-icon { font-size:56px; color:#dc2626; }
+.blocked-state h3 { font-size:18px; font-weight:700; }
+.blocked-state p  { font-size:14px; color:#475569; max-width:480px; line-height:1.6; }
