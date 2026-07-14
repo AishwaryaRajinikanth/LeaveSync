@@ -25,7 +25,7 @@ import { ChatComponent } from '../chat/chat.component';
   `,
   styles: [`
     .app-layout { display: flex; height: 100vh; overflow: hidden; }
-    .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 100vh; }
     .main-content { flex: 1; overflow-y: auto; padding: 20px 24px; background: #F0F2F5; }
   `]
 })

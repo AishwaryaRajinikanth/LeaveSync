@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>eTAS – Leave Reconciliation | UPS ITC</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;overflow:hidden;width:100vw;height:100vh}
+
+/* ── Player Shell ── */
+#player{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+#progress-bar{position:fixed;top:0;left:0;height:4px;background:linear-gradient(90deg,#ffb500,#ff8c00);width:0%;z-index:999;transition:width .3s linear;box-shadow:0 0 12px #ffb500}
+#timer{position:fixed;top:12px;right:18px;color:rgba(255,255,255,.6);font-size:13px;z-index:999;font-variant-numeric:tabular-nums}
+#controls{display:none}
+.ctrl-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;padding:8px 20px;border-radius:20px;cursor:pointer;font-size:13px;backdrop-filter:blur(6px);transition:all .2s}
+.ctrl-btn:hover{background:rgba(255,181,0,.3);border-color:#ffb500}
+
+/* ── Scene Base ── */
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .7s ease}
+.scene.active{opacity:1;pointer-events:all}
+
+/* ── Shared Atoms ── */
+.tag{display:inline-block;background:rgba(255,181,0,.15);color:#ffb500;border:1px solid rgba(255,181,0,.4);padding:5px 16px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:20px}
+.fade-up{opacity:0;transform:translateY(30px);animation:fadeUp .7s ease forwards}
+@keyframes fadeUp{to{opacity:1;transform:none}}
+.fade-in{opacity:0;animation:fadeIn .6s ease forwards}
+@keyframes fadeIn{to{opacity:1}}
+.slide-right{opacity:0;transform:translateX(-40px);animation:slideR .6s ease forwards}
+@keyframes slideR{to{opacity:1;transform:none}}
+.slide-left{opacity:0;transform:translateX(40px);animation:slideL .6s ease forwards}
+@keyframes slideL{to{opacity:1;transform:none}}
+.pop{opacity:0;transform:scale(.7);animation:pop .5s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes pop{to{opacity:1;transform:none}}
+.delay-1{animation-delay:.2s} .delay-2{animation-delay:.4s} .delay-3{animation-delay:.6s}
+.delay-4{animation-delay:.8s} .delay-5{animation-delay:1s} .delay-6{animation-delay:1.2s}
+
+/* ═══════════════════════════════ SCENE 1 – INTRO ═══════════════════════════ */
+#s1{background:radial-gradient(ellipse at 50% 40%,#1a0d00 0%,#0a0a0a 70%)}
+.ups-logo{font-size:56px;margin-bottom:8px;filter:drop-shadow(0 0 30px #ffb500)}
+.brand-line{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.brand-title{font-size:72px;font-weight:900;letter-spacing:-.02em;background:linear-gradient(135deg,#ffb500,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.brand-sub{font-size:18px;color:rgba(255,255,255,.55);letter-spacing:.06em;text-transform:uppercase}
+.tagline{font-size:22px;color:rgba(255,255,255,.85);margin-top:10px;font-weight:300}
+.tagline strong{color:#ffb500;font-weight:700}
+.pulse-ring{width:200px;height:200px;border-radius:50%;border:2px solid rgba(255,181,0,.3);position:absolute;animation:pulse 2s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.8);opacity:.8}100%{transform:scale(1.8);opacity:0}}
+
+/* ═══════════════════════════════ SCENE 2 – PROBLEM ════════════════════════ */
+#s2{background:linear-gradient(145deg,#0d0d1a,#0a0a0a)}
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:720px;margin-top:24px}
+.prob-card{background:rgba(255,60,60,.06);border:1px solid rgba(255,60,60,.2);border-radius:14px;padding:18px 22px;display:flex;gap:14px;align-items:flex-start}
+.prob-icon{font-size:28px;flex-shrink:0}
+.prob-card h4{color:#ff6b6b;font-size:14px;font-weight:700;margin-bottom:5px}
+.prob-card p{color:rgba(255,255,255,.5);font-size:12px;line-height:1.5}
+
+/* ═══════════════════════════════ SCENE 3 – HOW IT WORKS ═══════════════════ */
+#s3{background:linear-gradient(145deg,#080d14,#0a0a0a)}
+.flow-row{display:flex;align-items:center;gap:0;margin-top:28px}
+.flow-node{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:20px 24px;text-align:center;min-width:160px}
+.flow-node .icon{font-size:34px;margin-bottom:8px}
+.flow-node h4{color:#fff;font-size:13px;font-weight:700}
+.flow-node p{color:rgba(255,255,255,.4);font-size:11px;margin-top:4px}
+.flow-node.eleave .icon{color:#4a9eff}
+.flow-node.engine .icon{color:#ffb500}
+.flow-node.itas .icon{color:#4affb0}
+.arrow{width:60px;text-align:center;font-size:24px;color:#ffb500;animation:arrowPulse 1.2s ease-in-out infinite}
+@keyframes arrowPulse{0%,100%{opacity:.4;transform:scaleX(.8)}50%{opacity:1;transform:scaleX(1)}}
+.engine-label{font-size:10px;background:rgba(255,181,0,.15);color:#ffb500;padding:4px 12px;border-radius:20px;margin-top:8px;display:inline-block;border:1px solid rgba(255,181,0,.3)}
+
+/* ═══════════════════════════════ SCENE 4 – ENGINE RULES ═══════════════════ */
+#s4{background:linear-gradient(145deg,#06100a,#0a0a0a)}
+.rules-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;max-width:800px;margin-top:20px}
+.rule-chip{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px 16px;text-align:center}
+.rule-chip .emoji{font-size:24px;margin-bottom:6px}
+.rule-chip h5{font-size:12px;color:#fff;font-weight:700;margin-bottom:4px}
+.rule-chip p{font-size:10px;color:rgba(255,255,255,.4);line-height:1.4}
+.rule-chip.matched{border-color:rgba(74,255,176,.3);background:rgba(74,255,176,.05)}
+.rule-chip.missing{border-color:rgba(255,107,107,.3);background:rgba(255,107,107,.05)}
+.rule-chip.date{border-color:rgba(255,181,0,.3);background:rgba(255,181,0,.05)}
+.rule-chip.type{border-color:rgba(150,100,255,.3);background:rgba(150,100,255,.05)}
+.rule-chip.dup{border-color:rgba(100,180,255,.3);background:rgba(100,180,255,.05)}
+.rule-chip.excl{border-color:rgba(180,180,180,.3);background:rgba(180,180,180,.05)}
+
+/* ═══════════════════════════════ SCENE 5 – DASHBOARD ══════════════════════ */
+#s5{background:linear-gradient(145deg,#0a0e14,#0a0a0a)}
+.kpi-showcase{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-width:820px;margin-top:20px}
+.kpi-box{background:rgba(255,255,255,.05);border-radius:12px;padding:14px 16px;text-align:center;border-left:3px solid transparent}
+.kpi-box strong{display:block;font-size:28px;font-weight:900;line-height:1}
+.kpi-box span{font-size:10px;color:rgba(255,255,255,.45);margin-top:4px;display:block}
+.kpi-box.blue{border-color:#4a9eff} .kpi-box.green{border-color:#4affb0}
+.kpi-box.red{border-color:#ff6b6b} .kpi-box.amber{border-color:#ffb500} .kpi-box.teal{border-color:#00d4ff}
+.status-row{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;justify-content:center}
+.badge{padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700}
+.badge.matched{background:rgba(74,255,176,.15);color:#4affb0;border:1px solid rgba(74,255,176,.3)}
+.badge.missing{background:rgba(255,107,107,.15);color:#ff6b6b;border:1px solid rgba(255,107,107,.3)}
+.badge.date{background:rgba(255,181,0,.15);color:#ffb500;border:1px solid rgba(255,181,0,.3)}
+.badge.excl{background:rgba(180,180,180,.12);color:#aaa;border:1px solid rgba(180,180,180,.25)}
+
+/* ═══════════════════════════════ SCENE 6 – NOTIFY ════════════════════════ */
+#s6{background:linear-gradient(145deg,#0e0a14,#0a0a0a)}
+.email-mockup{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;max-width:520px;overflow:hidden;margin-top:20px}
+.email-header{background:linear-gradient(135deg,#1a3a5c,#0d2240);padding:20px 24px;display:flex;align-items:center;gap:14px}
+.email-header .icon{font-size:28px}
+.email-header h3{color:#fff;font-size:16px;font-weight:800}
+.email-header p{color:rgba(255,255,255,.5);font-size:11px}
+.email-body{padding:20px 24px}
+.email-row{display:flex;gap:12px;align-items:center;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:8px}
+.email-row span:first-child{color:rgba(255,255,255,.4);font-size:11px;width:90px;flex-shrink:0}
+.email-row span:last-child{color:#fff;font-size:12px;font-weight:600}
+.email-btns{display:flex;gap:10px;margin-top:14px}
+.email-btn{padding:9px 18px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer}
+.email-btn.primary{background:linear-gradient(135deg,#1a3a5c,#2a5c8c);color:#ffb500}
+.email-btn.secondary{background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.15)}
+.notify-ping{width:12px;height:12px;background:#ffb500;border-radius:50%;animation:ping 1s ease-in-out infinite;margin-right:6px;display:inline-block}
+@keyframes ping{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.6}}
+
+/* ═══════════════════════════════ SCENE 7 – AZURE ═════════════════════════ */
+#s7{background:radial-gradient(ellipse at 50% 50%,#001a30,#0a0a0a)}
+.azure-row{display:flex;align-items:center;gap:24px;margin-top:24px}
+.azure-box{background:rgba(0,120,215,.1);border:1px solid rgba(0,120,215,.3);border-radius:14px;padding:20px 28px;text-align:center;min-width:180px}
+.azure-box h4{color:#4a9eff;font-size:13px;font-weight:700;margin-top:10px}
+.azure-box p{color:rgba(255,255,255,.4);font-size:11px;margin-top:4px}
+.azure-icon{font-size:38px}
+.flow-line{width:40px;height:2px;background:linear-gradient(90deg,#0078d4,#4a9eff);border-radius:2px;position:relative}
+.flow-line::after{content:'▶';position:absolute;right:-8px;top:-8px;font-size:10px;color:#4a9eff}
+
+/* ═══════════════════════════════ SCENE 8 – OUTRO ══════════════════════════ */
+#s8{background:radial-gradient(ellipse at 50% 40%,#1a0d00 0%,#0a0a0a 70%)}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:700px;margin-top:24px}
+.feat{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px;text-align:center}
+.feat .icon{font-size:28px;margin-bottom:8px}
+.feat h5{color:#fff;font-size:12px;font-weight:700}
+.feat p{color:rgba(255,255,255,.4);font-size:10px;margin-top:4px;line-height:1.4}
+.cta{margin-top:32px;display:flex;align-items:center;gap:14px}
+.cta-btn{background:linear-gradient(135deg,#ffb500,#ff8c00);color:#1a0d00;padding:14px 36px;border-radius:30px;font-size:15px;font-weight:900;border:none;cursor:pointer;letter-spacing:.03em;box-shadow:0 8px 24px rgba(255,181,0,.4)}
+.made-with{color:rgba(255,255,255,.3);font-size:11px}
+.made-with span{color:#4a9eff}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="timer">0:00 / 1:00</div>
+
+<div id="player">
+
+<!-- ─── SCENE 1 ─── -->
+<div class="scene" id="s1">
+  <div class="pulse-ring" style="animation-delay:0s"></div>
+  <div class="pulse-ring" style="animation-delay:.6s"></div>
+  <div style="text-align:center;position:relative;z-index:2">
+    <div class="brand-line fade-up delay-1">
+      <span class="brand-title">eTAS</span>
+    </div>
+    <div class="brand-sub fade-up delay-2">E-Leave &#8596; ITAS Reconciliation System</div>
+    <div class="tagline fade-up delay-3">Automating leave reconciliation for <strong>UPS</strong></div>
+    <div class="fade-up delay-4" style="margin-top:20px">
+      <span class="tag">Hackathon 2026</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SCENE 2 ─── -->
+<div class="scene" id="s2">
+  <div style="text-align:center">
+    <div class="tag fade-in">The Problem</div>
+    <h2 class="fade-up delay-1" style="color:#fff;font-size:36px;font-weight:900;margin-bottom:6px">Manual Reconciliation</h2>
+    <p class="fade-up delay-2" style="color:rgba(255,255,255,.45);font-size:14px;margin-bottom:4px">Two systems. Zero sync. Endless errors.</p>
+  </div>
+  <div class="problem-grid">
+    <div class="prob-card fade-up delay-2">
+      <div class="prob-icon">🔁</div>
+      <div><h4>Repetitive Manual Work</h4><p>Weekly manual validation between the E-Leave Portal and ITAS increases administrative effort</p></div>
+    </div>
+    <div class="prob-card fade-up delay-3">
+      <div class="prob-icon">❌</div>
+      <div><h4>Data Mismatches</h4><p>Vacation, Illness records differ between systems causing payroll errors</p></div>
+    </div>
+    <div class="prob-card fade-up delay-4">
+      <div class="prob-icon">📋</div>
+      <div><h4>No Visibility</h4><p>No single platform to track missing, mismatched, or duplicate records</p></div>
+    </div>
+    <div class="prob-card fade-up delay-5">
+      <div class="prob-icon">🔔</div>
+      <div><h4>Delayed Alerts</h4><p>Late alerts prevent timely correction of eLeave and ITAS discrepancies, increasing the risk of payroll inaccuracies</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SCENE 3 ─── -->
+<div class="scene" id="s3">
+  <div style="text-align:center">
+    <div class="tag fade-in">The Solution</div>
+    <h2 class="fade-up delay-1" style="color:#fff;font-size:36px;font-weight:900">Intelligent Reconciliation Engine</h2>
+    <p class="fade-up delay-2" style="color:rgba(255,255,255,.4);font-size:14px;margin-top:6px">Upload. Compare. Notify. In seconds.</p>
+  </div>
+  <div class="flow-row fade-up delay-2">
+    <div class="flow-node eleave slide-right delay-2">
+      <div class="icon">✈️</div>
+      <h4>E-Leave Portal</h4>
+      <p>Leave applications</p>
+      <div class="engine-label">CSV / XLSX</div>
+    </div>
+    <div class="arrow delay-3">&#8594;</div>
+    <div class="flow-node engine pop delay-4" style="border-color:rgba(255,181,0,.4);background:rgba(255,181,0,.08)">
+      <div class="icon">⚙️</div>
+      <h4>eTAS Engine</h4>
+      <p>.NET 10 + Angular 21</p>
+    </div>
+    <div class="arrow delay-3">&#8592;</div>
+    <div class="flow-node itas slide-left delay-2">
+      <div class="icon">🕐</div>
+      <h4>ITAS</h4>
+      <p>PAR leave entries</p>
+      <div class="engine-label">CSV / XLSX</div>
+    </div>
+  </div>
+  <div class="fade-up delay-6" style="margin-top:20px;display:flex;gap:20px">
+    <span style="color:rgba(255,255,255,.4);font-size:12px">✅ Employee ID as primary key</span>
+    <span style="color:rgba(255,255,255,.4);font-size:12px">✅ Multi-day leave expansion</span>
+    <span style="color:rgba(255,255,255,.4);font-size:12px">✅ Holiday calendar exclusion</span>
+  </div>
+</div>
+
+<!-- ─── SCENE 4 ─── -->
+<div class="scene" id="s4">
+  <div style="text-align:center">
+    <div class="tag fade-in">Reconciliation Rules</div>
+    <h2 class="fade-up delay-1" style="color:#fff;font-size:32px;font-weight:900">6 Smart Status Categories</h2>
+    <p class="fade-up delay-2" style="color:rgba(255,255,255,.4);font-size:13px;margin-top:4px">Every record gets a precise status — no more guessing</p>
+  </div>
+  <div class="rules-grid">
+    <div class="rule-chip matched pop delay-2">
+      <div class="emoji">✅</div>
+      <h5 style="color:#4affb0">Matched</h5>
+      <p>Both systems agree on employee, date &amp; leave type</p>
+    </div>
+    <div class="rule-chip missing pop delay-3">
+      <div class="emoji">❌</div>
+      <h5 style="color:#ff6b6b">Missing in ITAS</h5>
+      <p>E-Leave application exists but no ITAS timesheet entry</p>
+    </div>
+    <div class="rule-chip missing pop delay-3">
+      <div class="emoji">❌</div>
+      <h5 style="color:#ff6b6b">Missing in E-Leave</h5>
+      <p>ITAS has leave entry but no E-Leave application found</p>
+    </div>
+    <div class="rule-chip date pop delay-4">
+      <div class="emoji">📅</div>
+      <h5 style="color:#ffb500">Date Mismatch</h5>
+      <p>Employee &amp; type match but leave dates differ</p>
+    </div>
+    <div class="rule-chip type pop delay-4">
+      <div class="emoji">🔄</div>
+      <h5 style="color:#b496ff">Type Mismatch</h5>
+      <p>Same date but leave types conflict after mapping</p>
+    </div>
+    <div class="rule-chip excl pop delay-5">
+      <div class="emoji">⚪</div>
+      <h5 style="color:#aaa">Excluded</h5>
+      <p>Holiday records excluded from reconciliation</p>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SCENE 5 ─── -->
+<div class="scene" id="s5">
+  <div style="text-align:center">
+    <div class="tag fade-in">Real-Time Dashboard</div>
+    <h2 class="fade-up delay-1" style="color:#fff;font-size:32px;font-weight:900">9 Live KPI Cards</h2>
+  </div>
+  <div class="kpi-showcase">
+    <div class="kpi-box blue pop delay-2"><strong style="color:#4a9eff">5</strong><span>ITAS Records</span></div>
+    <div class="kpi-box blue pop delay-2"><strong style="color:#4a9eff">4</strong><span>E-Leave Records</span></div>
+    <div class="kpi-box green pop delay-3"><strong style="color:#4affb0">1</strong><span>Matched</span></div>
+    <div class="kpi-box red pop delay-3"><strong style="color:#ff6b6b">1</strong><span>Missing ITAS</span></div>
+    <div class="kpi-box red pop delay-4"><strong style="color:#ff6b6b">2</strong><span>Missing E-Leave</span></div>
+    <div class="kpi-box amber pop delay-4"><strong style="color:#ffb500">1</strong><span>Date Mismatch</span></div>
+    <div class="kpi-box amber pop delay-5"><strong style="color:#ffb500">0</strong><span>Type Mismatch</span></div>
+    <div class="kpi-box teal pop delay-5"><strong style="color:#00d4ff">1</strong><span>Holidays Skipped</span></div>
+    <div class="kpi-box green pop delay-6"><strong style="color:#4affb0">20%</strong><span>Match Rate</span></div>
+  </div>
+  <div class="status-row fade-up delay-5">
+    <span class="badge matched">✅ Matched</span>
+    <span class="badge missing">❌ Missing in ITAS</span>
+    <span class="badge missing">❌ Missing in E-Leave</span>
+    <span class="badge date">⚠ Date Mismatch</span>
+    <span class="badge excl">⚪ Excluded</span>
+  </div>
+</div>
+
+<!-- ─── SCENE 6 ─── -->
+<div class="scene" id="s6">
+  <div style="text-align:center">
+    <div class="tag fade-in">Smart Notifications</div>
+    <h2 class="fade-up delay-1" style="color:#fff;font-size:32px;font-weight:900">Notify Employees Instantly</h2>
+    <p class="fade-up delay-2" style="color:rgba(255,255,255,.4);font-size:13px;margin-top:4px">
+      <span class="notify-ping"></span> One click · Personalised email · Direct portal links
+    </p>
+  </div>
+  <div class="email-mockup fade-up delay-3">
+    <div class="email-header">
+      <div class="icon">🔔</div>
+      <div>
+        <h3>[Alert] Leave Discrepancy - Jul 12, 2026 [High Priority]</h3>
+        <p>To: 8595727@ups.com · From: DoNotReply@azurecomm.net</p>
+      </div>
+    </div>
+    <div class="email-body">
+      <div class="email-row fade-up delay-4"><span>Employee ID</span><span>8595727</span></div>
+      <div class="email-row fade-up delay-4"><span>Date</span><span>Jul 12, 2026</span></div>
+      <div class="email-row fade-up delay-5"><span>Issue</span><span>ITAS has Illness on Jul 12 but E-Leave shows same type on Jul 11</span></div>
+      <div class="email-row fade-up delay-5"><span>Priority</span><span style="color:#ffb500">🔴 High</span></div>
+      <div class="email-btns fade-up delay-6">
+        <div class="email-btn primary">Open E-Leave Portal</div>
+        <div class="email-btn secondary">Open ITAS Timesheet</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SCENE 7 ─── -->
+<div class="scene" id="s7">
+  <div style="text-align:center">
+    <div class="tag fade-in">Powered by Microsoft Azure</div>
+    <h2 class="fade-up delay-1" style="color:#fff;font-size:32px;font-weight:900">Enterprise-Grade Infrastructure</h2>
+  </div>
+  <div class="azure-row fade-up delay-2">
+    <div class="azure-box pop delay-2">
+      <h4>Azure Communication Services</h4>
+      <p>Email delivery at scale</p>
+    </div>
+    <div class="flow-line delay-3"></div>
+    <div class="azure-box pop delay-3">
+      <h4>Azure Managed Domain</h4>
+      <p>azurecomm.net sender</p>
+    </div>
+    <div class="flow-line delay-4"></div>
+    <div class="azure-box pop delay-4">
+      <h4>.NET 10 + Angular 21</h4>
+      <p>Modern full-stack</p>
+    </div>
+  </div>
+  <div class="fade-up delay-5" style="margin-top:24px;display:flex;gap:16px;justify-content:center">
+    <div style="background:rgba(0,120,215,.12);border:1px solid rgba(0,120,215,.25);border-radius:10px;padding:10px 20px;text-align:center">
+      <div style="color:#4a9eff;font-size:20px;font-weight:900">12</div>
+      <div style="color:rgba(255,255,255,.4);font-size:11px">UPS ITC Holidays</div>
+    </div>
+    <div style="background:rgba(0,120,215,.12);border:1px solid rgba(0,120,215,.25);border-radius:10px;padding:10px 20px;text-align:center">
+      <div style="color:#4a9eff;font-size:20px;font-weight:900">100%</div>
+      <div style="color:rgba(255,255,255,.4);font-size:11px">Configurable Rules</div>
+    </div>
+    <div style="background:rgba(0,120,215,.12);border:1px solid rgba(0,120,215,.25);border-radius:10px;padding:10px 20px;text-align:center">
+      <div style="color:#4a9eff;font-size:20px;font-weight:900">Real-time</div>
+      <div style="color:rgba(255,255,255,.4);font-size:11px">Reconciliation</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SCENE 8 ─── -->
+<div class="scene" id="s8">
+  <div style="text-align:center">
+    <div class="tag fade-in">eTAS – Leave Reconciliation</div>
+    <h2 class="fade-up delay-1" style="color:#fff;font-size:38px;font-weight:900;margin-bottom:6px">
+      Built for <span style="background:linear-gradient(135deg,#ffb500,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">UPS ITC</span>
+    </h2>
+    <p class="fade-up delay-2" style="color:rgba(255,255,255,.45);font-size:14px">Hackathon 2026 · Team eTAS</p>
+  </div>
+  <div class="feature-grid">
+    <div class="feat pop delay-2"><div class="icon">⚡</div><h5>Instant Reconciliation</h5><p>Upload CSVs, get results in under a second</p></div>
+    <div class="feat pop delay-3"><div class="icon">🔔</div><h5>Smart Notifications</h5><p>ACS-powered email with portal deep links</p></div>
+    <div class="feat pop delay-3"><div class="icon">📊</div><h5>9 KPI Dashboard</h5><p>Real-time breakdown with column filters</p></div>
+    <div class="feat pop delay-4"><div class="icon">🗓️</div><h5>Holiday Calendar</h5><p>UPS ITC 2026 public holidays auto-excluded</p></div>
+    <div class="feat pop delay-4"><div class="icon">⚙️</div><h5>Configurable Rules</h5><p>Leave type mapping via appsettings.json</p></div>
+    <div class="feat pop delay-5"><div class="icon">☁️</div><h5>Azure-Native</h5><p>ACS Email · .NET 10</p></div>
+  </div>
+  <div class="cta fade-up delay-6">
+    <div class="made-with">Built with <span>Azure</span> · <span>.NET 10</span> · <span>Angular 21</span></div>
+  </div>
+</div>
+
+</div><!-- /player -->
+
+<div id="controls">
+  <button class="ctrl-btn" id="playBtn" onclick="togglePlay()">⏸ Pause</button>
+  <button class="ctrl-btn" onclick="prevScene()">◀ Prev</button>
+  <button class="ctrl-btn" onclick="nextScene()">Next ▶</button>
+</div>
+
+<script>
+const SCENES = ['s1','s2','s3','s4','s5','s6','s7','s8'];
+const DURATIONS = [7000,8000,8000,8000,8000,8000,7000,7000]; // ms per scene
+const TOTAL = DURATIONS.reduce((a,b)=>a+b,0);
+
+let current = 0, elapsed = 0, paused = false;
+let sceneTimer, progressTimer;
+
+function showScene(i){
+  SCENES.forEach((id,j)=>{
+    const el = document.getElementById(id);
+    el.classList.remove('active');
+    // reset animations by cloning
+    const clone = el.cloneNode(true);
+    el.parentNode.replaceChild(clone, el);
+  });
+  const el = document.getElementById(SCENES[i]);
+  el.classList.add('active');
+  current = i;
+}
+
+function startScene(i){
+  clearTimeout(sceneTimer);
+  showScene(i);
+  sceneTimer = setTimeout(()=>{
+    if(!paused){
+      if(current < SCENES.length-1) startScene(current+1);
+    }
+  }, DURATIONS[i]);
+}
+
+function nextScene(){ clearTimeout(sceneTimer); if(current<SCENES.length-1) startScene(current+1); }
+function prevScene(){ clearTimeout(sceneTimer); if(current>0) startScene(current-1); }
+
+function togglePlay(){
+  paused = !paused;
+  document.getElementById('playBtn').textContent = paused ? '▶ Play' : '⏸ Pause';
+  if(!paused) startScene(current);
+}
+
+// Progress bar & timer
+let startTime = Date.now();
+setInterval(()=>{
+  if(paused) return;
+  const ms = Math.min(Date.now()-startTime, TOTAL);
+  document.getElementById('progress-bar').style.width = (ms/TOTAL*100)+'%';
+  const s = Math.floor(ms/1000);
+  document.getElementById('timer').textContent = `0:${String(s%60).padStart(2,'0')} / 1:00`;
+}, 100);
+
+// Start
+startScene(0);
+</script>
+</body>
+</html>

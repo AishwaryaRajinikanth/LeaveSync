@@ -1,5 +1,7 @@
 ﻿.sidebar {
   width: 78px;
+  height: 100vh;
+  min-height: 100vh;
   background: linear-gradient(160deg, #1a0e0a 0%, #351c15 60%, #4a2c1a 100%);
   display: flex;
   flex-direction: column;
@@ -62,7 +64,7 @@
   }
 
   .sidebar-footer {
-    margin-top: auto; padding: 12px;
+    margin-top: auto; padding: 10px 12px;
     .version { font-size: 9px; color: rgba(255,255,255,0.3); }
   }
 }
