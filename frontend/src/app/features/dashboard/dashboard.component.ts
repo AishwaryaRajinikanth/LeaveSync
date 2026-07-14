@@ -2,12 +2,12 @@
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { ReconciliationResult, DiscrepancyItem } from '../../core/models/reconciliation.model';
-import { ELeaveRecord } from '../../core/models/eleave.model';
-import { ITASRecord } from '../../core/models/itas.model';
+import { ReconciliationResult, ReconciliationRecord, ReconciliationStatus, STATUS_LABEL, STATUS_CLASS } from '../../core/models/reconciliation.model';
+import { NotificationRequest } from '../../core/services/api.service';
 
 interface WeekDay { name: string; date: string; fullDate: string; statusClass: string; statusText: string; detail: string; isToday: boolean; }
 interface ComparisonRecord { date: string; type: string; status: string; highlight: '' | 'critical' | 'warning'; }
+interface NotifyModal { mode: 'single' | 'all'; item?: ReconciliationRecord; items?: ReconciliationRecord[]; empCount: number; recordCount: number; }
 
 @Component({
   selector: 'app-dashboard',
@@ -24,47 +24,51 @@ export class DashboardComponent {
   itasFile     = signal<File | null>(null);
   running      = signal(false);
   results      = signal<ReconciliationResult | null>(null);
-  activeFilter = signal<'all' | 'critical' | 'warning'>('all');
+  activeFilter = signal<string>('issues');
   weekDays     = signal<WeekDay[]>([]);
   weekLabel    = signal('');
   eleaveSide   = signal<ComparisonRecord[]>([]);
   itasSide     = signal<ComparisonRecord[]>([]);
   notifiedSet  = new Set<string>();
 
-  // Column filters — each column maps to a Set of selected values
-  columnFilters  = signal<Record<string, Set<string>>>({});
-  openFilter     = signal<string | null>(null);
-  filterSearch   = signal<Record<string, string>>({});   // per-column search text
+  columnFilters = signal<Record<string, Set<string>>>({});
+  openFilter    = signal<string | null>(null);
+  filterSearch  = signal<Record<string, string>>({});
+  notifyModal   = signal<NotifyModal | null>(null);
 
-  private readonly filterCols = ['employee', 'department', 'date', 'eleaveStatus', 'itasStatus', 'issue', 'priority'];
+  private readonly filterCols = ['employee', 'department', 'date', 'eleaveType', 'itasType', 'status', 'issue'];
+
+  readonly STATUS_LABEL = STATUS_LABEL;
+  readonly STATUS_CLASS = STATUS_CLASS;
 
   get canRun(): boolean { return !!this.eleaveFile() && !!this.itasFile(); }
 
-  private baseDiscrepancies(): DiscrepancyItem[] {
+  private baseRecords(): ReconciliationRecord[] {
     const r = this.results();
     if (!r) return [];
-    if (this.activeFilter() === 'critical') return r.critical;
-    if (this.activeFilter() === 'warning')  return r.warnings;
-    return [...r.critical, ...r.warnings];
+    const f = this.activeFilter();
+    if (f === 'issues')  return r.records.filter(rec => rec.status !== 'Matched');
+    if (f === 'matched') return r.records.filter(rec => rec.status === 'Matched');
+    return r.records.filter(rec => rec.status === f as ReconciliationStatus);
   }
 
-  private cellValue(d: DiscrepancyItem, col: string): string {
+  private cellValue(d: ReconciliationRecord, col: string): string {
     switch (col) {
-      case 'employee':     return d.employeeName || ('EMP ' + d.employeeId);
-      case 'department':   return d.department || '—';
-      case 'date':         return d.date;      case 'leaveType':    return d.leaveType || '\u2014';      case 'eleaveStatus': return d.eleaveStatus || '—';
-      case 'itasStatus':   return d.itasStatus || '—';
-      case 'issue':        return d.issue;
-      case 'priority':     return this.getPriority(d) === 'high' ? 'High' : 'Medium';
-      default:             return '';
+      case 'employee':   return d.employeeId;
+      case 'department': return d.department || '-';
+      case 'date':       return d.date;
+      case 'eleaveType': return d.eleaveType || '-';
+      case 'itasType':   return d.itasType   || '-';
+      case 'status':     return STATUS_LABEL[d.status] ?? d.status;
+      case 'issue':      return d.issue;
+      default:           return '';
     }
   }
 
-  /** Unique sorted values for a column filtered by search text */
   uniqueValues(col: string): string[] {
     const search = (this.filterSearch()[col] ?? '').toLowerCase();
     const set = new Set<string>();
-    this.baseDiscrepancies().forEach(d => set.add(this.cellValue(d, col)));
+    this.baseRecords().forEach(d => set.add(this.cellValue(d, col)));
     return [...set].sort().filter(v => !search || v.toLowerCase().includes(search));
   }
 
@@ -77,9 +81,9 @@ export class DashboardComponent {
     this.filterSearch.set({ ...this.filterSearch(), [col]: value });
   }
 
-  get allDiscrepancies(): DiscrepancyItem[] {
+  get allDiscrepancies(): ReconciliationRecord[] {
     const filters = this.columnFilters();
-    return this.baseDiscrepancies().filter(d =>
+    return this.baseRecords().filter(d =>
       this.filterCols.every(col => {
         const sel = filters[col];
         if (!sel || sel.size === 0) return true;
@@ -94,9 +98,7 @@ export class DashboardComponent {
   }
 
   @HostListener('document:click')
-  closeAllFilters() {
-    this.openFilter.set(null);
-  }
+  closeAllFilters() { this.openFilter.set(null); }
 
   isFilterActive(col: string): boolean {
     const s = this.columnFilters()[col];
@@ -121,7 +123,6 @@ export class DashboardComponent {
     const filters = { ...this.columnFilters() };
     delete filters[col];
     this.columnFilters.set(filters);
-    // Clear search and close dropdown
     this.filterSearch.set({ ...this.filterSearch(), [col]: '' });
     this.openFilter.set(null);
   }
@@ -130,46 +131,45 @@ export class DashboardComponent {
   onITASFile(e: Event)   { this.itasFile.set(  (e.target as HTMLInputElement).files?.[0] ?? null); }
 
   async runReconciliation() {
-    if (!this.canRun) {
-      this.notify.showToast('Please upload both E-Leave and ITAS files first');
-      return;
-    }
+    if (!this.canRun) { this.notify.showToast('Please upload both E-Leave and ITAS files first'); return; }
     this.running.set(true);
-
     this.api.uploadAndReconcile(this.eleaveFile()!, this.itasFile()!).subscribe({
       next: (result: ReconciliationResult) => {
         this.results.set(result);
-        this.buildWeekView([], [], result);
-        this.buildComparison([], [], result);
+        this.activeFilter.set('issues');
+        this.columnFilters.set({});
+        this.buildWeekView(result);
+        this.buildComparison(result);
         this.running.set(false);
-
-        const notifs = [
-          ...result.critical.map((i: DiscrepancyItem) => ({ type: 'critical' as const, title: `Critical: ${i.issue}`, employee: i.employeeName, time: 'Just now', action: i.recommendation })),
-          ...result.warnings.map((i: DiscrepancyItem) => ({ type: 'warning'  as const, title: `Warning: ${i.issue}`,  employee: i.employeeName, time: 'Just now', action: i.recommendation })),
-          ...(result.matched.length ? [{ type: 'info' as const, title: `${result.matched.length} record(s) successfully reconciled`, employee: 'System', time: 'Just now', action: 'No action needed' }] : [])
-        ];
+        const issues = result.records.filter(r => r.status !== 'Matched');
+        const notifs = issues.slice(0, 20).map(i => ({
+          type: (i.status === 'MissingInITAS' || i.status === 'MissingInELeave' || i.status === 'InvalidEmployeeId')
+            ? 'critical' as const : 'warning' as const,
+          title: `${STATUS_LABEL[i.status]}: ${i.issue.slice(0, 60)}`,
+          employee: i.employeeId,
+          time: 'Just now',
+          action: i.recommendation
+        }));
+        if (result.summary.matched > 0)
+          notifs.push({ type: 'warning' as const, title: `${result.summary.matched} record(s) matched`, employee: 'System', time: 'Just now', action: 'No action needed' });
         this.notify.pushNotifications(notifs);
-        this.notify.showToast(`Reconciliation complete â€” ${result.summary.reconciliationRate}% sync rate`);
+        this.notify.showToast(`Reconciliation complete - ${result.summary.reconciliationPercentage}% match rate`);
       },
       error: (err: any) => {
         this.running.set(false);
         const msg = err?.error?.error ?? err?.message ?? 'Unknown error';
         this.notify.showToast(`API error: ${msg}`);
-        console.error('Reconciliation API error', err);
       }
     });
   }
 
-  setFilter(f: 'all' | 'critical' | 'warning') { this.activeFilter.set(f); }
+  setFilter(f: string) { this.activeFilter.set(f); this.columnFilters.set({}); }
 
-  getPriority(d: DiscrepancyItem): string {
-    return d.priority ?? (d.severity === 'critical' ? 'high' : 'medium');
-  }
+  statusLabel(s: ReconciliationStatus): string { return STATUS_LABEL[s] ?? s; }
+  statusClass(s: ReconciliationStatus): string  { return STATUS_CLASS[s] ?? 'warning'; }
 
-  initials(name: string): string {
-    if (!name) return '?';
-    return name.replace(/^EMP\s*/i, '').split(/[\s,]+/)
-      .map(p => p[0]).filter(Boolean).join('').slice(0, 2).toUpperCase();
+  isCritical(s: ReconciliationStatus): boolean {
+    return s === 'MissingInITAS' || s === 'MissingInELeave' || s === 'InvalidEmployeeId';
   }
 
   formatDate(d: string): string {
@@ -177,77 +177,78 @@ export class DashboardComponent {
     return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  eleaveClass(status: string): string {
-    if (!status || status === '-') return 'sp-neutral';
-    const s = status.toLowerCase();
-    if (s.includes('approved')) return 'sp-approved';
-    if (s.includes('pending'))  return 'sp-pending';
-    if (s.includes('rejected')) return 'sp-rejected';
-    return 'sp-neutral';
+  notifyIssue(item: ReconciliationRecord) {
+    this.notifyModal.set({ mode: 'single', item, items: [item], empCount: 1, recordCount: 1 });
   }
 
-  itasClass(status: string): string {
-    if (!status || status === '-') return 'sp-neutral';
-    const s = status.toLowerCase();
-    if (s.includes('annual') || s.includes('vacation')) return 'sp-annual';
-    if (s.includes('illness') || s.includes('sick'))    return 'sp-sick';
-    if (s.includes('holiday'))                          return 'sp-holiday';
-    if (s.includes('approved'))                         return 'sp-approved';
-    if (s.includes('pending') || s.includes('draft'))   return 'sp-pending';
-    if (s.includes('day') || s.includes('h)'))          return 'sp-duration';
-    return 'sp-neutral';
-  }
-
-  resolveIssue(item: DiscrepancyItem) {
-    this.notify.showToast(`Opening portal to resolve: ${item.issue}`);
-  }
-
-  notifyIssue(item: DiscrepancyItem) {
-    const key = `${item.employeeId}_${item.date}_${item.rule}`;
-    this.notifiedSet.add(key);
-    this.notify.showToast(`Notification sent: ${item.employeeName} â€¢ ${item.date} â€¢ ${item.rule}`);
-  }
-
-  isNotified(item: DiscrepancyItem): boolean {
-    return this.notifiedSet.has(`${item.employeeId}_${item.date}_${item.rule}`);
+  isNotified(item: ReconciliationRecord): boolean {
+    return this.notifiedSet.has(`${item.employeeId}_${item.date}_${item.status}`);
   }
 
   notifyAll() {
-    const r = this.results();
-    if (!r) return;
-    [...r.critical, ...r.warnings].forEach(i => this.notifyIssue(i));
-    this.notify.showToast(`Notified all ${r.critical.length + r.warnings.length} discrepancies`);
+    const rows = this.allDiscrepancies.filter(r => r.status !== 'Matched');
+    if (!rows.length) { this.notify.showToast('No visible records to notify'); return; }
+    const uniqueIds = new Set(rows.map(r => r.employeeId));
+    this.notifyModal.set({ mode: 'all', items: rows, empCount: uniqueIds.size, recordCount: rows.length });
+  }
+
+  cancelNotify() { this.notifyModal.set(null); }
+
+  confirmNotify() {
+    const modal = this.notifyModal();
+    if (!modal) return;
+    this.notifyModal.set(null);
+
+    if (modal.mode === 'single' && modal.item) {
+      const item = modal.item;
+      const key  = `${item.employeeId}_${item.date}_${item.status}`;
+      const req: NotificationRequest = {
+        employeeId: item.employeeId, issue: item.issue, date: item.date,
+        priority: this.isCritical(item.status) ? 'High' : 'Medium',
+        recommendation: item.recommendation, employeeName: item.employeeName, department: item.department,
+      };
+      this.api.notify(req).subscribe({
+        next: () => { this.notifiedSet.add(key); this.notify.showToast(`Notification sent to ${item.employeeId}@ups.com`, 'send'); },
+        error: (err: any) => this.notify.showToast(`Failed: ${err?.error?.error ?? err?.message ?? 'Unknown error'}`, 'error')
+      });
+    } else if (modal.mode === 'all' && modal.items) {
+      const requests: NotificationRequest[] = modal.items.map(item => ({
+        employeeId: item.employeeId, issue: item.issue, date: item.date,
+        priority: this.isCritical(item.status) ? 'High' : 'Medium',
+        recommendation: item.recommendation, employeeName: item.employeeName, department: item.department,
+      }));
+      this.api.notifyAll(requests).subscribe({
+        next: (res) => {
+          modal.items!.forEach(i => this.notifiedSet.add(`${i.employeeId}_${i.date}_${i.status}`));
+          this.notify.showToast(res.message ?? `Notified ${modal.recordCount} record(s)`, 'send');
+        },
+        error: (err: any) => this.notify.showToast(`Failed: ${err?.error?.error ?? err?.message ?? 'Unknown error'}`, 'error')
+      });
+    }
+  }
+
+  resolveIssue(item: ReconciliationRecord) {
+    this.notify.showToast(`Opening portal to resolve: ${item.issue}`);
   }
 
   exportCsv() {
-    if (!this.results()) return;
-
-    // Export only currently filtered/visible rows matching UI columns exactly
     const rows = this.allDiscrepancies;
-    if (rows.length === 0) { this.notify.showToast('No records to export'); return; }
-
+    if (!rows.length) { this.notify.showToast('No records to export'); return; }
     const clean = (s: string) =>
-      (s ?? '')
-        .replace(/\u2014/g, '-')   // em dash
-        .replace(/\u2013/g, '-')   // en dash
-        .replace(/\u201c|\u201d/g, '"')  // smart quotes
-        .replace(/\u2019/g, "'")   // smart apostrophe
-        .replace(/[^\x00-\x7F]/g, ' '); // any remaining non-ASCII
-
-    // UI columns only: Employee ID, Employee Name, Dept, Date, E-Leave, ITAS, Issue, Priority
-    const header = 'Employee ID,Department,Date,E-Leave,ITAS,Issue,Priority,Recommendation';
+      (s ?? '').replace(/[--]/g, '-').replace(/[\u201c\u201d]/g, '"')
+               .replace(/\u2019/g, "'").replace(/[^\x00-\x7F]/g, ' ');
+    const header = 'Employee ID,Department,Date,E-Leave Type,ITAS Type,Status,Issue,Recommendation';
     const lines  = rows.map(d => [
       d.employeeId,
       `"${clean(d.department || '-')}"`,
       d.date,
-      `"${clean(d.leaveType || d.eleaveStatus || '-')}"`,
-      `"${clean(d.itasStatus || '-')}"`,
+      `"${clean(d.eleaveType || '-')}"`,
+      `"${clean(d.itasType   || '-')}"`,
+      `"${clean(STATUS_LABEL[d.status] ?? d.status)}"`,
       `"${clean(d.issue)}"`,
-      this.getPriority(d) === 'high' ? 'High' : 'Medium',
       `"${clean(d.recommendation || '')}"`
     ].join(','));
-
-    const bom  = '\uFEFF'; // BOM for correct Excel UTF-8 encoding
+    const bom  = '\uFEFF';
     const blob = new Blob([bom + [header, ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -258,55 +259,43 @@ export class DashboardComponent {
     this.notify.showToast(`Exported ${rows.length} record(s)`);
   }
 
-  private buildWeekView(_e: ELeaveRecord[], _i: ITASRecord[], result: ReconciliationResult) {
-    const allItems: any[] = [...result.matched, ...result.critical, ...result.warnings];
-    if (!allItems.length) { this.weekDays.set([]); return; }
-
-    const dates = allItems.map(x => x.date).filter(Boolean).sort();
+  private buildWeekView(result: ReconciliationResult) {
+    const dates = result.records.map(x => x.date).filter(Boolean).sort();
+    if (!dates.length) { this.weekDays.set([]); return; }
     const anchor = new Date(dates[dates.length - 1] + 'T00:00:00');
     const weekStart = new Date(anchor);
     weekStart.setDate(anchor.getDate() - anchor.getDay());
     const today = new Date().toISOString().split('T')[0];
-
     const days: WeekDay[] = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
-      const fullDate = d.toISOString().split('T')[0];
-      const matched  = result.matched.find((m: any) => m.date === fullDate);
-      const critical = result.critical.find((c: any) => c.date === fullDate);
-      const warning  = result.warnings.find((w: any) => w.date === fullDate);
-
+      const fullDate  = d.toISOString().split('T')[0];
+      const matched   = result.records.find(r => r.date === fullDate && r.status === 'Matched');
+      const critical  = result.records.find(r => r.date === fullDate && this.isCritical(r.status as ReconciliationStatus));
+      const warning   = result.records.find(r => r.date === fullDate && r.status !== 'Matched' && !this.isCritical(r.status as ReconciliationStatus));
       let statusClass = i === 0 || i === 6 ? 'status-weekend' : 'status-work';
       let statusText  = i === 0 || i === 6 ? 'Weekend' : 'Work';
       let detail = '';
-
-      if (critical) { statusClass = 'status-mismatch'; statusText = '⚠ Issue';   detail = critical.issue.slice(0, 30); }
-      else if (warning) { statusClass = 'status-mismatch'; statusText = '⚠ Warn'; detail = warning.issue.slice(0, 30); }
-      else if (matched) { statusClass = 'status-vacation'; statusText = (matched as any).leaveType ?? 'Leave'; detail = `${(matched as any).hours ?? ''}h`; }
-
+      if (critical) { statusClass = 'status-mismatch'; statusText = '! Issue'; detail = critical.issue.slice(0, 30); }
+      else if (warning) { statusClass = 'status-mismatch'; statusText = '! Warn'; detail = warning.issue.slice(0, 30); }
+      else if (matched) { statusClass = 'status-vacation'; statusText = matched.eleaveType ?? 'Leave'; detail = ''; }
       return { name: d.toLocaleDateString('en-US', { weekday: 'short' }), date: `${d.getMonth()+1}/${d.getDate()}`, fullDate, statusClass, statusText, detail, isToday: fullDate === today };
     });
-
     const wEnd = new Date(weekStart); wEnd.setDate(weekStart.getDate() + 6);
-    this.weekLabel.set(`Week of ${weekStart.toLocaleDateString('en-US', {month:'short',day:'numeric'})} – ${wEnd.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'})}`);
+    this.weekLabel.set(`Week of ${weekStart.toLocaleDateString('en-US', {month:'short',day:'numeric'})} - ${wEnd.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'})}`);
     this.weekDays.set(days);
   }
 
-  private buildComparison(_e: ELeaveRecord[], _i: ITASRecord[], result: ReconciliationResult) {
-    const focusId = (result.matched[0] ?? result.critical[0] ?? result.warnings[0])?.employeeId ?? '';
-
-    const el: ComparisonRecord[] = [
-      ...result.matched .filter((x: any) => x.employeeId === focusId).map((x: any) => ({ date: x.date, type: (x as any).leaveType ?? 'Leave', status: 'Approved',   highlight: '' as const })),
-      ...result.critical.filter((x: any) => x.employeeId === focusId).map((x: any) => ({ date: x.date, type: x.eleaveStatus,                  status: x.eleaveStatus, highlight: 'critical' as const })),
-      ...result.warnings.filter((x: any) => x.employeeId === focusId).map((x: any) => ({ date: x.date, type: x.eleaveStatus,                  status: x.eleaveStatus, highlight: 'warning'  as const })),
-    ].sort((a, b) => b.date.localeCompare(a.date));
-
-    const it: ComparisonRecord[] = [
-      ...result.matched .filter((x: any) => x.employeeId === focusId).map((x: any) => ({ date: x.date, type: `${(x as any).itasType} (${(x as any).hours}h)`, status: 'Submitted', highlight: '' as const })),
-      ...result.critical.filter((x: any) => x.employeeId === focusId).map((x: any) => ({ date: x.date, type: x.itasStatus, status: x.itasStatus, highlight: 'critical' as const })),
-      ...result.warnings.filter((x: any) => x.employeeId === focusId).map((x: any) => ({ date: x.date, type: x.itasStatus, status: x.itasStatus, highlight: 'warning'  as const })),
-    ].sort((a, b) => b.date.localeCompare(a.date));
-
+  private buildComparison(result: ReconciliationResult) {
+    const focusId = result.records[0]?.employeeId ?? '';
+    const focusRecords = result.records.filter(r => r.employeeId === focusId);
+    const el: ComparisonRecord[] = focusRecords
+      .filter(r => r.eleaveType)
+      .map(r => ({ date: r.date, type: r.eleaveType!, status: r.status, highlight: this.isCritical(r.status as ReconciliationStatus) ? 'critical' as const : r.status !== 'Matched' ? 'warning' as const : '' as const }));
+    const it: ComparisonRecord[] = focusRecords
+      .filter(r => r.itasType)
+      .map(r => ({ date: r.date, type: r.itasType!, status: r.status, highlight: this.isCritical(r.status as ReconciliationStatus) ? 'critical' as const : r.status !== 'Matched' ? 'warning' as const : '' as const }));
     this.eleaveSide.set(el);
     this.itasSide.set(it);
   }
 }
+

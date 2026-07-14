@@ -55,11 +55,15 @@ public class CsvFileParserService : IFileParserService
                     Submitted:        true);
 
             var hours = double.TryParse(GetVal(r, "Hours", "Hrs on PAR"), out var h) ? h : 0;
-            var parCode = GetVal(r, "PAR Name", "PAR", "Type");
+            var parCode  = GetVal(r, "PAR Name", "PAR", "Type");
+            var leaveType = MapITASType(parCode);
+
+            // Only store recognised leave entries; skip Work/Training/Overhead/etc.
+            if (leaveType == null) continue;
 
             byEmp[id].Entries.Add(new ITASEntry(
                 Date:           ParseDate(GetVal(r, "Date")),
-                Type:           MapITASType(parCode),
+                Type:           leaveType,
                 Par:            parCode,
                 Hours:          hours,
                 Phase:          GetVal(r, "Phase"),
@@ -97,14 +101,16 @@ public class CsvFileParserService : IFileParserService
         return DateOnly.MinValue;
     }
 
-    private static string MapITASType(string par)
+    private static string? MapITASType(string par)
     {
-        if (string.IsNullOrWhiteSpace(par) || par == "0") return "Work";
-        var p = par.ToLowerInvariant();
-        if (p.Contains("illness") || p.Contains("sick"))     return "Illness";
-        if (p.Contains("vacation") || p.Contains("annual"))  return "Vacation";
-        if (p.Contains("holiday"))                           return "Holiday";
-        // Training, Other Out of Office, PAR work = counted as Work
-        return "Work";
+        if (string.IsNullOrWhiteSpace(par)) return null; // empty = regular work, skip
+        var p = par.ToLowerInvariant().Trim();
+        if (p.Contains("illness") || p.Contains("sick"))    return "Illness";
+        if (p.Contains("vacation") || p.Contains("annual")) return "Vacation";
+        if (p.Contains("holiday"))                          return "Holiday";
+        if (p.Contains("casual") || p.Contains("unpaid"))   return "Vacation";
+        if (p.Contains("leave"))                            return "Vacation";
+        // Non-standard absence types (Training, Other Out of Office, etc.) — keep original name
+        return par;
     }
 }

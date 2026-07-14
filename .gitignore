@@ -12,3 +12,6 @@ backend/*.user
 # OS
 .DS_Store
 Thumbs.db
+
+# Local secrets
+backend/appsettings.Development.json

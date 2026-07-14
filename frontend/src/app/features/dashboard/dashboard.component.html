@@ -27,10 +27,10 @@
   </div>
   <div class="demo-notice">
     <span class="material-symbols-outlined">info</span>
-    <span>Upload both E-Leave and ITAS CSV files then click Run Reconciliation.</span>
+    <span>Upload both E-Leave and ITAS CSV/XLSX files then click Run Reconciliation.</span>
   </div>
   <div class="upload-actions">
-    <button class="btn-primary btn-run" [disabled]="running() || !canRun" [title]="!canRun ? 'Upload both files to enable' : 'Run reconciliation'" (click)="runReconciliation()">
+    <button class="btn-primary btn-run" [disabled]="running() || !canRun" (click)="runReconciliation()">
       @if (running()) {
         <span class="spinner-inline"></span> Running...
       } @else {
@@ -44,39 +44,63 @@
 @if (results()) {
   <section class="kpi-row">
     <div class="kpi-card blue">
-      <span class="material-symbols-outlined">calendar_today</span>
-      <div><strong>{{ results()!.summary.total }}</strong><span>Total Records</span></div>
+      <span class="material-symbols-outlined">schedule</span>
+      <div><strong>{{ results()!.summary.totalITASRecords }}</strong><span>ITAS Records</span></div>
+    </div>
+    <div class="kpi-card blue">
+      <span class="material-symbols-outlined">flight_takeoff</span>
+      <div><strong>{{ results()!.summary.totalELeaveRecords }}</strong><span>E-Leave Records</span></div>
     </div>
     <div class="kpi-card green">
       <span class="material-symbols-outlined">check_circle</span>
       <div><strong>{{ results()!.summary.matched }}</strong><span>Matched</span></div>
     </div>
-    <div class="kpi-card amber">
-      <span class="material-symbols-outlined">warning</span>
-      <div><strong>{{ results()!.summary.warnings }}</strong><span>Warnings</span></div>
-    </div>
     <div class="kpi-card red">
       <span class="material-symbols-outlined">cancel</span>
-      <div><strong>{{ results()!.summary.critical }}</strong><span>Critical</span></div>
+      <div><strong>{{ results()!.summary.missingInITAS }}</strong><span>Missing in ITAS</span></div>
+    </div>
+    <div class="kpi-card red">
+      <span class="material-symbols-outlined">event_busy</span>
+      <div><strong>{{ results()!.summary.missingInELeave }}</strong><span>Missing in E-Leave</span></div>
+    </div>
+    <div class="kpi-card amber">
+      <span class="material-symbols-outlined">date_range</span>
+      <div><strong>{{ results()!.summary.dateMismatches }}</strong><span>Date Mismatches</span></div>
+    </div>
+    <div class="kpi-card amber">
+      <span class="material-symbols-outlined">swap_horiz</span>
+      <div><strong>{{ results()!.summary.leaveTypeMismatches }}</strong><span>Type Mismatches</span></div>
+    </div>
+    <div class="kpi-card amber">
+      <span class="material-symbols-outlined">content_copy</span>
+      <div><strong>{{ results()!.summary.duplicateRecords }}</strong><span>Duplicates</span></div>
+    </div>
+    <div class="kpi-card purple">
+      <span class="material-symbols-outlined">event_available</span>
+      <div><strong>{{ results()!.summary.holidaysSkipped }}</strong><span>Holidays Skipped</span></div>
     </div>
     <div class="kpi-card teal">
       <span class="material-symbols-outlined">percent</span>
-      <div><strong>{{ results()!.summary.reconciliationRate }}%</strong><span>Sync Rate</span></div>
+      <div><strong>{{ results()!.summary.reconciliationPercentage }}%</strong><span>Match Rate</span></div>
     </div>
   </section>
 }
 
-<!-- Results -->
+<!-- Results Table -->
 @if (results()) {
   <section class="results-section">
     <div class="section-head">
-      <h2><span class="material-symbols-outlined">report_problem</span> Discrepancies Found</h2>
+      <h2><span class="material-symbols-outlined">report_problem</span> Reconciliation Results</h2>
       <div class="filter-group">
-            <button class="btn-export" (click)="exportCsv()"><span class="material-symbols-outlined">download</span> Export CSV</button>
-            <button class="notify-all-btn" (click)="notifyAll()"><span class="material-symbols-outlined">notifications</span> Notify All</button>
-            <button class="filter-btn" [class.active]="activeFilter()==='all'"      (click)="setFilter('all')">All</button>
-            <button class="filter-btn" [class.active]="activeFilter()==='critical'" (click)="setFilter('critical')">Critical</button>
-            <button class="filter-btn" [class.active]="activeFilter()==='warning'"  (click)="setFilter('warning')">Warning</button>
+        <button class="btn-export" (click)="exportCsv()"><span class="material-symbols-outlined">download</span> Export CSV</button>
+        <button class="notify-all-btn" (click)="notifyAll()"><span class="material-symbols-outlined">notifications</span> Notify All</button>
+        <button class="filter-btn" [class.active]="activeFilter()==='issues'"            (click)="setFilter('issues')">All Issues</button>
+        <button class="filter-btn" [class.active]="activeFilter()==='matched'"           (click)="setFilter('matched')">Matched</button>
+        <button class="filter-btn" [class.active]="activeFilter()==='MissingInITAS'"     (click)="setFilter('MissingInITAS')">Missing in ITAS</button>
+        <button class="filter-btn" [class.active]="activeFilter()==='MissingInELeave'"   (click)="setFilter('MissingInELeave')">Missing in E-Leave</button>
+        <button class="filter-btn" [class.active]="activeFilter()==='DateMismatch'"      (click)="setFilter('DateMismatch')">Date Mismatch</button>
+        <button class="filter-btn" [class.active]="activeFilter()==='LeaveTypeMismatch'" (click)="setFilter('LeaveTypeMismatch')">Type Mismatch</button>
+        <button class="filter-btn" [class.active]="activeFilter()==='DuplicateRecord'"   (click)="setFilter('DuplicateRecord')">Duplicate</button>
       </div>
     </div>
 
@@ -85,13 +109,13 @@
         <thead>
           <tr>
             @for (col of [
-              {key:'employee',     label:'Employee'},
-              {key:'department',   label:'Dept'},
-              {key:'date',         label:'Date'},
-              {key:'eleaveStatus', label:'E-Leave'},
-              {key:'itasStatus',   label:'ITAS'},
-              {key:'issue',        label:'Issue'},
-              {key:'priority',     label:'Priority'}
+              {key:'employee',    label:'Employee ID'},
+              {key:'department',  label:'Dept'},
+              {key:'date',        label:'Date'},
+              {key:'eleaveType',  label:'E-Leave Type'},
+              {key:'itasType',    label:'ITAS Type'},
+              {key:'status',      label:'Status'},
+              {key:'issue',       label:'Issue'}
             ]; track col.key) {
               <th class="filter-th">
                 <div class="th-inner">
@@ -135,45 +159,123 @@
           </tr>
         </thead>
         <tbody>
-          @for (d of allDiscrepancies; track d.employeeId + d.date + d.rule) {
+          @for (d of allDiscrepancies; track d.employeeId + d.date + d.status) {
             <tr>
               <td>
                 <div class="emp-cell">
-                  <div class="avatar">{{ initials(d.employeeName) }}</div>
+                  <div class="avatar">{{ (d.employeeId || '?').slice(0,2).toUpperCase() }}</div>
                   <div>
-                    <div class="emp-name">{{ d.employeeName || ('EMP ' + d.employeeId) }}</div>
-                    <div class="emp-id">{{ d.employeeId }}</div>
+                    <div class="emp-name">{{ d.employeeId }}</div>
+                    @if (d.employeeName) { <div class="emp-id">{{ d.employeeName }}</div> }
                   </div>
                 </div>
               </td>
               <td>{{ d.department || '&mdash;' }}</td>
               <td>{{ formatDate(d.date) }}</td>
               <td>
-                <span class="status-pill" [class]="eleaveClass(d.eleaveStatus)">
-                  {{ d.leaveType || '&mdash;' }}
+                <span class="status-pill sp-neutral">{{ d.eleaveType || '&mdash;' }}</span>
+              </td>
+              <td>
+                <span class="status-pill sp-neutral">{{ d.itasType || '&mdash;' }}</span>
+              </td>
+              <td>
+                <span class="status-badge" [class]="'badge-' + statusClass(d.status)">
+                  <span class="material-symbols-outlined">
+                    {{ d.status === 'Matched' ? 'check_circle' :
+                       d.status === 'MissingInITAS' || d.status === 'MissingInELeave' ? 'cancel' :
+                       d.status === 'DuplicateRecord' ? 'content_copy' :
+                       d.status === 'InvalidEmployeeId' ? 'person_off' : 'warning' }}
+                  </span>
+                  {{ STATUS_LABEL[d.status] }}
                 </span>
               </td>
-              <td><span class="status-pill" [class]="itasClass(d.itasStatus)">{{ d.itasStatus || '&mdash;' }}</span></td>
               <td class="issue-cell">{{ d.issue }}</td>
               <td>
-                <span class="priority-badge" [class]="'p-' + getPriority(d)">
-                  <span class="material-symbols-outlined">{{ getPriority(d) === 'high' ? 'priority_high' : 'remove' }}</span>
-                  {{ getPriority(d) === 'high' ? 'High' : 'Medium' }}
-                </span>
-              </td>
-              <td>
                 <div class="action-btns">
-                  <button class="btn-notify-sm" [class.notified]="isNotified(d)" [disabled]="isNotified(d)" (click)="notifyIssue(d)">
-                    {{ isNotified(d) ? '✓ Notified' : 'Notify' }}
+                  <button class="btn-notify-sm" [class.notified]="isNotified(d)" [disabled]="isNotified(d) || d.status === 'Matched'" (click)="notifyIssue(d)">
+                    <span class="material-symbols-outlined">{{ isNotified(d) ? 'check' : 'send' }}</span>
+                    {{ isNotified(d) ? 'Notified' : 'Notify' }}
                   </button>
                 </div>
               </td>
             </tr>
           } @empty {
-              <tr><td colspan="8" class="empty-state">No discrepancies found — all records matched!</td></tr>
+            <tr><td colspan="8" class="empty-state">No records found for the selected filter.</td></tr>
           }
         </tbody>
       </table>
     </div>
   </section>
+}
+
+<!-- Notification Confirmation Modal -->
+@if (notifyModal()) {
+  <div class="modal-overlay" (click)="cancelNotify()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <span class="modal-icon material-symbols-outlined">notifications_active</span>
+        <div>
+          <h3>{{ notifyModal()!.mode === 'all' ? 'Send Bulk Notifications' : 'Send Notification' }}</h3>
+          <p>{{ notifyModal()!.mode === 'all' ? 'Email alert to all employees with discrepancies' : 'Email alert to this employee' }}</p>
+        </div>
+        <button type="button" class="modal-close" (click)="cancelNotify()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (notifyModal()!.mode === 'all') {
+          <div class="modal-stat-row">
+            <div class="modal-stat">
+              <span class="material-symbols-outlined">group</span>
+              <div><strong>{{ notifyModal()!.empCount }}</strong><span>Employee{{ notifyModal()!.empCount !== 1 ? 's' : '' }}</span></div>
+            </div>
+            <div class="modal-stat">
+              <span class="material-symbols-outlined">report_problem</span>
+              <div><strong>{{ notifyModal()!.recordCount }}</strong><span>Discrepanc{{ notifyModal()!.recordCount !== 1 ? 'ies' : 'y' }}</span></div>
+            </div>
+          </div>
+          <p class="modal-desc">
+            Each employee will receive a personalised email listing their specific
+            leave discrepancies and recommended actions.
+          </p>
+        } @else {
+          <div class="modal-single-detail">
+            <div class="modal-detail-row">
+              <span class="material-symbols-outlined">badge</span>
+              <span>Employee <strong>{{ notifyModal()!.item!.employeeId }}</strong></span>
+            </div>
+            <div class="modal-detail-row">
+              <span class="material-symbols-outlined">calendar_today</span>
+              <span>{{ formatDate(notifyModal()!.item!.date) }}</span>
+            </div>
+            <div class="modal-detail-row">
+              <span class="material-symbols-outlined">warning</span>
+              <span class="status-badge" [class]="'badge-' + statusClass(notifyModal()!.item!.status)">
+                {{ STATUS_LABEL[notifyModal()!.item!.status] }}
+              </span>
+            </div>
+            <div class="modal-detail-row modal-issue">
+              <span class="material-symbols-outlined">info</span>
+              <span>{{ notifyModal()!.item!.issue }}</span>
+            </div>
+          </div>
+          <p class="modal-desc">
+            A notification email will be sent to the employee listing the discrepancy
+            details and the recommended action.
+          </p>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="modal-btn-cancel" (click)="cancelNotify()">Cancel</button>
+        <button type="button" class="modal-btn-confirm" (click)="confirmNotify()">
+          <span class="material-symbols-outlined">send</span>
+          {{ notifyModal()!.mode === 'all' ? 'Send ' + notifyModal()!.empCount + ' Notification' + (notifyModal()!.empCount !== 1 ? 's' : '') : 'Send Notification' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
 }

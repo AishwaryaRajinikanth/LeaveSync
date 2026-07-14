@@ -1,54 +1,48 @@
 namespace backend.src.Domain.Models;
 
-public enum Severity { Warning, Critical }
-
-/// <summary>Priority label shown in the UI: High (was Critical), Medium (was Warning)</summary>
-public static class Priority
+/// <summary>All possible reconciliation outcomes — configurable without code changes.</summary>
+public static class ReconciliationStatus
 {
-    public static string From(Severity s) => s == Severity.Critical ? "high" : "medium";
+    public const string Matched              = "Matched";
+    public const string MissingInITAS        = "MissingInITAS";
+    public const string MissingInELeave      = "MissingInELeave";
+    public const string DateMismatch         = "DateMismatch";
+    public const string LeaveTypeMismatch    = "LeaveTypeMismatch";
+    public const string DuplicateRecord      = "DuplicateRecord";
+    public const string InvalidEmployeeId    = "InvalidEmployeeId";
+    public const string Excluded             = "Excluded";
+    public const string RequiresManualReview = "RequiresManualReview";
 }
 
-public record DiscrepancyItem(
-    string Rule,
-    Severity Severity,
-    string EmployeeId,
-    string EmployeeName,
-    string Department,
-    string Date,
-    string LeaveType,
-    string EleaveStatus,   // camelCase → eleaveStatus  ✓
-    string ItasStatus,     // camelCase → itasStatus    ✓
-    string Issue,
-    string Recommendation
-)
-{
-    /// <summary>Derived priority label for the UI</summary>
-    public string Priority => Models.Priority.From(Severity);
-};
-
-public record MatchedRecord(
-    string EmployeeId,
-    string EmployeeName,
-    string Department,
-    string Date,
-    string LeaveType,
-    string ITASType,
-    double Hours
+/// <summary>Single reconciled row — one per (EmployeeId, Date) comparison.</summary>
+public record ReconciliationRecord(
+    string  Status,
+    string  EmployeeId,
+    string? EmployeeName,
+    string  Department,
+    string  Date,
+    string? EleaveType,      // serializes as eleaveType
+    string? ItasType,        // serializes as itasType
+    string  Issue,
+    string  Recommendation
 );
 
+/// <summary>Detailed 9-field KPI breakdown for the dashboard.</summary>
 public record ReconciliationSummary(
-    int Total,
+    int TotalITASRecords,
+    int TotalELeaveRecords,
     int Matched,
-    int Warnings,
-    int Critical,
-    int ReconciliationRate
+    int MissingInITAS,
+    int MissingInELeave,
+    int DateMismatches,
+    int LeaveTypeMismatches,
+    int DuplicateRecords,
+    int HolidaysSkipped,
+    int ReconciliationPercentage
 );
 
 public record ReconciliationResult(
     DateTime Timestamp,
-    int TotalRecords,
-    List<MatchedRecord> Matched,
-    List<DiscrepancyItem> Warnings,
-    List<DiscrepancyItem> Critical,
+    List<ReconciliationRecord> Records,
     ReconciliationSummary Summary
 );

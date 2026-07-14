@@ -1,6 +1,7 @@
 using backend.src.Domain.Interfaces;
 using backend.src.Application.Services;
 using backend.src.Infrastructure.Parsers;
+using backend.src.Infrastructure.Services;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Register services with dependency injection
 builder.Services.AddScoped<IReconciliationService, ReconciliationService>();
 builder.Services.AddScoped<IFileParserService, CsvFileParserService>();
+builder.Services.AddScoped<IEmailService, AcsEmailService>();
 
 // Controllers + OpenAPI — serialize enums as camelCase strings
 builder.Services.AddControllers()
@@ -17,9 +19,9 @@ builder.Services.AddControllers()
     });
 builder.Services.AddOpenApi();
 
-// CORS — allow Angular dev server
+// CORS — allow any localhost port (Angular dev server may use 4200, 63459, etc.)
 builder.Services.AddCors(opts => opts.AddDefaultPolicy(p =>
-    p.WithOrigins("http://localhost:4200")
+    p.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
      .AllowAnyHeader()
      .AllowAnyMethod()));
 
