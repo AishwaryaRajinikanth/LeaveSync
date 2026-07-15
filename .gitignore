@@ -17,3 +17,4 @@ Thumbs.db
 backend/appsettings.Development.json
 
 backend/publish/
+frontend/package-lock.json

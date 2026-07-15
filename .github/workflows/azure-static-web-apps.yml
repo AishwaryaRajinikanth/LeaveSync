@@ -8,19 +8,25 @@ jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     name: Build and Deploy
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20.x'
+
+      - name: Disable corepack (prevents npm version conflicts)
+        run: corepack disable || true
 
       - name: Install dependencies
         working-directory: frontend
-        run: npm install
+        run: |
+          rm -f package-lock.json
+          npm install --legacy-peer-deps --no-optional
 
-      - name: Build Angular
+      - name: Build Angular production
         working-directory: frontend
         run: npx ng build --configuration production
 
