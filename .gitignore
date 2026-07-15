@@ -15,3 +15,5 @@ Thumbs.db
 
 # Local secrets
 backend/appsettings.Development.json
+
+backend/publish/

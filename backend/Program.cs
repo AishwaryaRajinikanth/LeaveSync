@@ -19,9 +19,11 @@ builder.Services.AddControllers()
     });
 builder.Services.AddOpenApi();
 
-// CORS — allow any localhost port (Angular dev server may use 4200, 63459, etc.)
+// CORS — allow any localhost port + production Static Web App
 builder.Services.AddCors(opts => opts.AddDefaultPolicy(p =>
-    p.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
+    p.SetIsOriginAllowed(origin =>
+        new Uri(origin).Host == "localhost" ||
+        origin == "https://witty-water-0d4e0fc1e.7.azurestaticapps.net")
      .AllowAnyHeader()
      .AllowAnyMethod()));
 

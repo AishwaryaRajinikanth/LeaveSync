@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: '/api',
+  apiUrl: 'https://etas-api-gtamhxe9ghagdde0.northcentralus-01.azurewebsites.net/api',
 };
