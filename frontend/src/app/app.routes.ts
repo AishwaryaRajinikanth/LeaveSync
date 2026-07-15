@@ -3,7 +3,6 @@ import { authGuard } from './core/guards/auth.guard';
 import { LayoutComponent } from './shared/components/layout/layout.component';
 
 export const routes: Routes = [
-  { path: 'login', loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent) },
   {
     path: '',
     component: LayoutComponent,
@@ -18,5 +17,5 @@ export const routes: Routes = [
       { path: 'portals',       loadComponent: () => import('./features/portal/portal.component').then(m => m.PortalComponent) },
     ]
   },
-  { path: '**', redirectTo: 'login' }
+  { path: '**', redirectTo: '' }
 ];

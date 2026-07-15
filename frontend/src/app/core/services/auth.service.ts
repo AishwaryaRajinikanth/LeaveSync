@@ -4,13 +4,21 @@ import { AuthSession } from '../models/auth.model';
 
 const AUTH_KEY = 'ups-sso-auth';
 
+// Auto-login — skip SSO for demo
+const AUTO_SESSION: AuthSession = {
+  id: 'MFP1SNF',
+  name: 'Aishwarya',
+  provider: 'ups',
+  timestamp: new Date().toISOString()
+};
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private _session$ = new BehaviorSubject<AuthSession | null>(this.loadSession());
+  private _session$ = new BehaviorSubject<AuthSession | null>(AUTO_SESSION);
 
   get session$() { return this._session$.asObservable(); }
   get session(): AuthSession | null { return this._session$.value; }
-  get isAuthenticated(): boolean { return !!this._session$.value; }
+  get isAuthenticated(): boolean { return true; }
 
   login(employeeId: string, provider: 'ups' | 'ms'): Promise<AuthSession> {
     return new Promise(resolve => {
